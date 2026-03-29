@@ -1,6 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+
+function Header() {
+  return (
+    <header className="border-b border-slate-200 bg-white">
+      <div className="mx-auto max-w-6xl px-6 py-4">
+        <nav className="flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-slate-900">
+            Christian Study Guide
+          </Link>
+          <div className="flex gap-6">
+            <Link
+              href="/"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Home
+            </Link>
+            <Link
+              href="/blog"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Blog
+            </Link>
+          </div>
+        </nav>
+      </div>
+    </header>
+  );
+}
 
 const verses = [
   {
@@ -17,7 +46,13 @@ const verses = [
   },
 ];
 
-function HeroSection({ currentVerse, nextVerse }) {
+function HeroSection({
+  currentVerse,
+  nextVerse,
+}: {
+  currentVerse: { text: string; reference: string };
+  nextVerse: () => void;
+}) {
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
       <div className="grid items-center gap-10 md:grid-cols-2">
@@ -75,7 +110,13 @@ function HeroSection({ currentVerse, nextVerse }) {
   );
 }
 
-function FeatureCard({ title, description }) {
+function FeatureCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="rounded-3xl bg-white p-6 shadow-md transition hover:-translate-y-1 hover:shadow-xl">
       <h3 className="mb-3 text-xl font-bold">{title}</h3>
@@ -84,7 +125,11 @@ function FeatureCard({ title, description }) {
   );
 }
 
-function FeaturesSection({ features }) {
+function FeaturesSection({
+  features,
+}: {
+  features: { title: string; description: string }[];
+}) {
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
       <h2 className="mb-8 text-center text-3xl font-bold">Main Features</h2>
@@ -101,7 +146,15 @@ function FeaturesSection({ features }) {
   );
 }
 
-function TopicsSection({ topics, selectedTopic, setSelectedTopic }) {
+function TopicsSection({
+  topics,
+  selectedTopic,
+  setSelectedTopic,
+}: {
+  topics: string[];
+  selectedTopic: string;
+  setSelectedTopic: (topic: string) => void;
+}) {
   const filteredTopics = topics.filter((topic) =>
     topic.toLowerCase().includes(selectedTopic.toLowerCase()),
   );
@@ -151,6 +204,11 @@ function PrayerJournalSection({
   setPrayerEntry,
   savedPrayer,
   savePrayer,
+}: {
+  prayerEntry: string;
+  setPrayerEntry: (entry: string) => void;
+  savedPrayer: string;
+  savePrayer: () => void;
 }) {
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
@@ -275,6 +333,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white text-slate-900">
+      <Header />
       <HeroSection currentVerse={currentVerse} nextVerse={nextVerse} />
       <FeaturesSection features={features} />
       <TopicsSection
