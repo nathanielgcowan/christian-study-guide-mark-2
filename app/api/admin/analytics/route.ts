@@ -1,33 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../../lib/auth";
-
-const MOCK_METRICS = [
-  {
-    id: 1,
-    email: "alice@example.com",
-    lastActive: "2026-03-27 19:18",
-    sessions: 17,
-    prayersLogged: 7,
-    pagesVisited: 53,
-  },
-  {
-    id: 2,
-    email: "ben@example.com",
-    lastActive: "2026-03-28 06:08",
-    sessions: 24,
-    prayersLogged: 14,
-    pagesVisited: 81,
-  },
-  {
-    id: 3,
-    email: "carla@example.com",
-    lastActive: "2026-03-28 08:43",
-    sessions: 9,
-    prayersLogged: 3,
-    pagesVisited: 27,
-  },
-];
+import { prisma } from "../../../../lib/prisma";
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -36,5 +10,46 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  return NextResponse.json({ metrics: MOCK_METRICS });
+  const events = await prisma.analyticsEvent.findMany({
+    include: { user: { select: { email: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+
+  const metricsByUser = events.reduce<
+    Record<
+      string,
+      { lastActive: string; sessions: number; prayers: number; pages: number }
+    >
+  >((acc, event) => {
+    const email = event.user.email;
+    const existing = acc[email] || {
+      lastActive: "",
+      sessions: 0,
+      prayers: 0,
+      pages: 0,
+    };
+
+    if (event.createdAt.toISOString() > existing.lastActive) {
+      existing.lastActive = event.createdAt.toISOString();
+    }
+
+    if (event.type === "session") existing.sessions += 1;
+    if (event.type === "prayer") existing.prayers += 1;
+    if (event.type === "page") existing.pages += 1;
+
+    acc[email] = existing;
+    return acc;
+  }, {});
+
+  const metrics = Object.entries(metricsByUser).map(([email, data], idx) => ({
+    id: idx + 1,
+    email,
+    lastActive: data.lastActive,
+    sessions: data.sessions,
+    prayersLogged: data.prayers,
+    pagesVisited: data.pages,
+  }));
+
+  return NextResponse.json({ metrics });
 }

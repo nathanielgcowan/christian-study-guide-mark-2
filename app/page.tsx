@@ -55,6 +55,12 @@ function Header() {
               Resources
             </Link>
             <Link
+              href="/auth/register"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Register
+            </Link>
+            <Link
               href="/admin/analytics"
               className="text-slate-600 hover:text-slate-900 transition"
             >

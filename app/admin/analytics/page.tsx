@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-
-const ADMIN_EMAIL = "nathaniel.g.cowan@gmail.com";
+import { useSession } from "next-auth/react";
 
 interface UserMetric {
   id: number;
@@ -14,51 +13,48 @@ interface UserMetric {
   pagesVisited: number;
 }
 
-const MOCK_METRICS: UserMetric[] = [
-  {
-    id: 1,
-    email: "alice@example.com",
-    lastActive: "2026-03-27 19:18",
-    sessions: 17,
-    prayersLogged: 7,
-    pagesVisited: 53,
-  },
-  {
-    id: 2,
-    email: "ben@example.com",
-    lastActive: "2026-03-28 06:08",
-    sessions: 24,
-    prayersLogged: 14,
-    pagesVisited: 81,
-  },
-  {
-    id: 3,
-    email: "carla@example.com",
-    lastActive: "2026-03-28 08:43",
-    sessions: 9,
-    prayersLogged: 3,
-    pagesVisited: 27,
-  },
-];
-
 export default function AdminAnalyticsPage() {
-  const [activeAdminEmail, setActiveAdminEmail] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+  const [metrics, setMetrics] = useState<UserMetric[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isAdmin = status === "authenticated" && session?.user?.role === "admin";
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("currentUserEmail");
-    if (stored) setActiveAdminEmail(stored);
-  }, []);
+    if (!isAdmin) return;
 
-  const isAdmin = activeAdminEmail === ADMIN_EMAIL;
+    setLoading(true);
+    setError(null);
+
+    fetch("/api/admin/analytics")
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json();
+          throw new Error(body.error || "Failed to fetch metrics");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setMetrics(data.metrics);
+      })
+      .catch((err) => {
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, [isAdmin]);
 
   const totals = useMemo(() => {
-    return {
-      users: MOCK_METRICS.length,
-      sessions: MOCK_METRICS.reduce((sum, item) => sum + item.sessions, 0),
-      prayers: MOCK_METRICS.reduce((sum, item) => sum + item.prayersLogged, 0),
-      pages: MOCK_METRICS.reduce((sum, item) => sum + item.pagesVisited, 0),
-    };
-  }, []);
+    return metrics.reduce(
+      (agg, metric) => ({
+        users: metrics.length,
+        sessions: agg.sessions + metric.sessions,
+        prayers: agg.prayers + metric.prayersLogged,
+        pages: agg.pages + metric.pagesVisited,
+      }),
+      { users: 0, sessions: 0, prayers: 0, pages: 0 },
+    );
+  }, [metrics]);
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -72,26 +68,19 @@ export default function AdminAnalyticsPage() {
         </Link>
       </div>
 
-      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p>
-          This page is restricted to admin users. Set{" "}
-          <code>currentUserEmail</code> in
-          <code>localStorage</code> to <strong>{ADMIN_EMAIL}</strong> and
-          refresh.
-        </p>
-        <p className="mt-2 text-sm text-slate-500">
-          Example:
-          <code>localStorage.setItem("currentUserEmail", "{ADMIN_EMAIL}")</code>
-        </p>
-      </div>
+      {status === "loading" && <p>Loading session...</p>}
 
-      {!isAdmin && (
+      {status === "unauthenticated" && (
+        <div className="rounded-xl border border-rose-300 bg-rose-50 p-6 text-rose-800">
+          <h2 className="text-xl font-semibold">Not signed in</h2>
+          <p className="mt-2">Sign in as an admin to access analytics.</p>
+        </div>
+      )}
+
+      {status === "authenticated" && !isAdmin && (
         <div className="rounded-xl border border-rose-300 bg-rose-50 p-6 text-rose-800">
           <h2 className="text-xl font-semibold">Access Denied</h2>
-          <p className="mt-2">
-            You are not signed in as an admin. Current user:{" "}
-            <strong>{activeAdminEmail || "not set"}</strong>
-          </p>
+          <p className="mt-2">You are not an admin.</p>
         </div>
       )}
 
@@ -124,6 +113,9 @@ export default function AdminAnalyticsPage() {
             </div>
           </div>
 
+          {error && <div className="text-rose-600">{error}</div>}
+          {loading && <div>Loading analytics..</div>}
+
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
             <table className="min-w-full divide-y divide-slate-200 text-left">
               <thead className="bg-slate-100 text-slate-700">
@@ -138,7 +130,7 @@ export default function AdminAnalyticsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {MOCK_METRICS.map((metric) => (
+                {metrics.map((metric) => (
                   <tr key={metric.id}>
                     <td className="px-4 py-3">{metric.email}</td>
                     <td className="px-4 py-3">{metric.lastActive}</td>
