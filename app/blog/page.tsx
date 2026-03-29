@@ -1,8 +1,5 @@
-import dynamic from "next/dynamic";
 import Link from "next/link";
-const SocialShare = dynamic(() => import("../../components/SocialShare"), {
-  ssr: false,
-});
+import ClientSocialShare from "../../components/ClientSocialShare";
 
 function Header() {
   return (
@@ -182,7 +179,7 @@ export default function Blog() {
                 Read More
               </Link>
               <div className="mt-4 flex justify-end">
-                <SocialShare
+                <ClientSocialShare
                   text={`Read this blog post: ${post.title}`}
                   url={`https://yourdomain.com/blog/${post.slug}`}
                 />
