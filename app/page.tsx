@@ -79,6 +79,12 @@ function Header() {
               Prayer Requests
             </Link>
             <Link
+              href="/user/verse-generator"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Share Verse
+            </Link>
+            <Link
               href="/admin/analytics"
               className="text-slate-600 hover:text-slate-900 transition"
             >

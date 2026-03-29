@@ -41,6 +41,14 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 - User activity logging (sessions, prayers, page views)
 - Google Analytics integration
 
+✅ **Bible Verse Image Generator**
+
+- Create beautiful shareable verse images (1200x630px)
+- Customize colors with presets or custom colors
+- Download as PNG for social media
+- Generate OpenGraph-optimized shareable links
+- Perfect for Instagram, Twitter, Facebook, Pinterest
+
 ## Getting Started
 
 ### 1. Clone & Install
@@ -96,6 +104,11 @@ Open [http://localhost:3000](http://localhost:3000).
 - `GET/POST /api/user/prayer-requests` — prayer request feed
 - `GET/POST /api/user/email-prefs` — email subscriptions
 
+### Verse Sharing
+
+- `POST /api/verse/generate-image` — generate verse image (returns PNG)
+- `GET /api/og/verse` — OpenGraph verse image endpoint (query params)
+
 ### Admin
 
 - `GET /api/admin/analytics` — user analytics (admin only)
@@ -113,6 +126,8 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/user/bookmarks` — Saved content
 - `/user/prayer-requests` — Prayer requests feed
 - `/user/settings` — Email preferences
+- `/user/verse-generator` — Create shareable verse images
+- `/share/verse` — Shareable verse page with OpenGraph metadata
 - `/admin/analytics` — Admin dashboard
 
 ## Database Schema
