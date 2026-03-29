@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 const DarkModeToggle = dynamic(() => import("../components/DarkModeToggle"), {
   ssr: false,
 });
+const FunFact = dynamic(() => import("../components/FunFact"), { ssr: false });
 
 function Header() {
   return (
@@ -411,6 +412,9 @@ export default function Home() {
     <main className="min-h-screen bg-linear-to-b from-blue-50 to-white text-slate-900">
       <Header />
       <HeroSection currentVerse={currentVerse} nextVerse={nextVerse} />
+      <div className="mx-auto max-w-2xl">
+        <FunFact />
+      </div>
       <FeaturesSection features={features} />
       <TopicsSection
         topics={topics}
