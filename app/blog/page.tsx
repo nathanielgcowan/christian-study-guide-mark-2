@@ -1,4 +1,7 @@
+
+import dynamic from "next/dynamic";
 import Link from "next/link";
+const SocialShare = dynamic(() => import("../../components/SocialShare"), { ssr: false });
 
 function Header() {
   return (
@@ -140,7 +143,7 @@ const posts = [
 
 export default function Blog() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white text-slate-900">
+    <main className="min-h-screen bg-linear-to-b from-blue-50 to-white text-slate-900">
       <Header />
       <section className="mx-auto max-w-4xl px-6 py-16">
         <div className="mb-12 text-center">
@@ -177,6 +180,9 @@ export default function Blog() {
               >
                 Read More
               </Link>
+              <div className="mt-4 flex justify-end">
+                <SocialShare text={`Read this blog post: ${post.title}`} url={`https://yourdomain.com/blog/${post.slug}`} />
+              </div>
             </article>
           ))}
         </div>

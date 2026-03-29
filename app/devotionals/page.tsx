@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { getPassage, BiblePassageVerse } from "../../lib/bible";
 import Link from "next/link";
 
+import dynamic from "next/dynamic";
+const SocialShare = dynamic(() => import("../../components/SocialShare"), { ssr: false });
+
 function Header() {
   return (
     <header className="border-b border-slate-200 bg-white">
@@ -237,6 +240,9 @@ function DevotionalCard({
           <cite className="mt-2 block text-right font-semibold text-blue-600">
             — {devotional.verse.reference}
           </cite>
+          <div className="mt-4 flex justify-end">
+            <SocialShare text={`Read today's devotional: ${devotional.title}`} />
+          </div>
         </div>
       </div>
 
@@ -296,7 +302,7 @@ export default function Devotionals() {
   const otherDevotionals = devotionals.filter((d) => d.date !== selectedDate);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white text-slate-900">
+    <main className="min-h-screen bg-linear-to-b from-blue-50 to-white text-slate-900">
       <Header />
       <section className="mx-auto max-w-4xl px-6 py-16">
         <div className="mb-12 text-center">

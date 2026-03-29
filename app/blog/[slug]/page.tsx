@@ -1,5 +1,8 @@
+
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+const SocialShare = dynamic(() => import("../../../components/SocialShare"), { ssr: false });
 
 function Header() {
   return (
@@ -8,27 +11,30 @@ function Header() {
         <nav className="flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-slate-900">
             Christian Study Guide
-          </Link>
-          <div className="flex flex-wrap gap-4 md:gap-6">
-            <Link
-              href="/"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Home
-            </Link>
-            <Link
-              href="/blog"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/reading-plans"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Reading Plans
-            </Link>
-            <Link
+          return (
+            <main className="min-h-screen bg-linear-to-b from-blue-50 to-white text-slate-900">
+              <Header />
+              <article className="mx-auto max-w-4xl px-6 py-16">
+                <div className="mb-8">
+                  <Link
+                    href="/blog"
+                    className="inline-block rounded-2xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-800 transition hover:bg-slate-100 mb-6"
+                  >
+                    ← Back to Blog
+                  </Link>
+                  <h1 className="mb-2 text-4xl font-extrabold md:text-5xl">{post.title}</h1>
+                  <time className="text-sm text-slate-500">{post.date}</time>
+                  <div className="mt-4 flex justify-end">
+                    <SocialShare text={`Read this blog post: ${post.title}`} url={`https://yourdomain.com/blog/${slug}`} />
+                  </div>
+                </div>
+                <div
+                  className="prose prose-lg max-w-none text-slate-800"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
+                />
+              </article>
+            </main>
+          );
               href="/prayer-journal"
               className="text-slate-600 hover:text-slate-900 transition"
             >
