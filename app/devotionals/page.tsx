@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getPassage, BiblePassageVerse } from "../../lib/bible";
 import Link from "next/link";
 
 function Header() {
@@ -176,6 +177,22 @@ function DevotionalCard({
   isToday?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(isToday);
+  const [passage, setPassage] = useState<BiblePassageVerse[] | null>(null);
+  const [loadingPassage, setLoadingPassage] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    setLoadingPassage(true);
+    getPassage(devotional.verse.reference).then((result) => {
+      if (!ignore) {
+        setPassage(result);
+        setLoadingPassage(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
+  }, [devotional.verse.reference]);
 
   return (
     <div
@@ -199,9 +216,24 @@ function DevotionalCard({
         <h2 className="mb-4 text-2xl font-bold">{devotional.title}</h2>
 
         <div className="mb-6 rounded-2xl bg-slate-50 p-4">
-          <blockquote className="text-lg italic text-slate-700">
-            "{devotional.verse.text}"
-          </blockquote>
+          {loadingPassage ? (
+            <div className="text-slate-400 italic">Loading passage...</div>
+          ) : passage && passage.length > 0 ? (
+            <blockquote className="text-lg italic text-slate-700 space-y-1">
+              {passage.map((v) => (
+                <span key={v.number} className="block">
+                  <span className="font-bold text-blue-700 mr-1">
+                    {v.number}
+                  </span>
+                  {v.text}
+                </span>
+              ))}
+            </blockquote>
+          ) : (
+            <blockquote className="text-lg italic text-slate-700">
+              "{devotional.verse.text}"
+            </blockquote>
+          )}
           <cite className="mt-2 block text-right font-semibold text-blue-600">
             — {devotional.verse.reference}
           </cite>
