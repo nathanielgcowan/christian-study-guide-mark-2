@@ -1,33 +1,154 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Features
+
+✅ **Authentication & Authorization**
+
+- NextAuth with JWT sessions
+- User registration + password hashing (bcryptjs)
+- Admin role-based access control
+- Protected routes with middleware
+
+✅ **User Engagement Features**
+
+- **User Profiles** — customize name, bio, avatar
+- **Bookmarks/Favorites** — save verses, blog posts, resources
+- **Progress Tracking** — track reading plans, devotional completion
+- **Prayer Requests Feed** — submit and view community prayer requests
+- **Email Preferences** — subscribe to daily devotionals, newsletters
+
+✅ **Admin Dashboard**
+
+- Real-time analytics + user metrics
+- Protected `/admin/analytics` with role-based gating
+- Aggregate user activity (sessions, prayers, page visits)
+
+✅ **Email Integration** (optional)
+
+- Daily devotional email scheduler
+- Resend or SendGrid provider support
+- Customizable email templates
+
+✅ **Bible API** (optional)
+
+- Fetch scripture verses
+- Search Bible by keyword
+- Mock fallback for development
+
+✅ **Analytics**
+
+- Event tracking API (`/api/analytics/event`)
+- User activity logging (sessions, prayers, page views)
+- Google Analytics integration
+
 ## Getting Started
 
-First, run the development server:
+### 1. Clone & Install
+
+```bash
+git clone <repo>
+cd christian-study-guide
+npm install
+npx prisma generate
+```
+
+### 2. Setup Database
+
+```bash
+# SQLite (development)
+DATABASE_URL="file:./prisma/dev.db" npx prisma migrate dev --name init
+
+# Or PostgreSQL (production)
+# Update DATABASE_URL in .env.local, then:
+# npx prisma migrate deploy
+```
+
+### 3. Setup Environment
+
+Copy `.env.example` to `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your values:
+
+- `NEXTAUTH_SECRET` — generate with `openssl rand -hex 32`
+- `ADMIN_EMAIL` and `ADMIN_PASSWORD` for initial admin
+- Optional: `RESEND_API_KEY`, `SENDGRID_API_KEY`, `BIBLE_API_KEY`
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API Routes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### User Features
 
-## Learn More
+- `POST /api/auth/register` — create account
+- `GET/POST /api/user/profile` — view/update profile
+- `GET/POST/DELETE /api/user/bookmarks` — manage bookmarks
+- `GET/POST /api/user/progress` — track reading progress
+- `GET/POST /api/user/prayer-requests` — prayer request feed
+- `GET/POST /api/user/email-prefs` — email subscriptions
 
-To learn more about Next.js, take a look at the following resources:
+### Admin
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `GET /api/admin/analytics` — user analytics (admin only)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Cron Jobs
+
+- `POST /api/cron/daily-devotional` — trigger email (requires `CRON_SECRET`)
+
+## Pages
+
+- `/` — Home
+- `/auth/signin` — Login
+- `/auth/register` — Sign up
+- `/user/profile` — User profile
+- `/user/bookmarks` — Saved content
+- `/user/prayer-requests` — Prayer requests feed
+- `/user/settings` — Email preferences
+- `/admin/analytics` — Admin dashboard
+
+## Database Schema
+
+- **User** — authentication + profile (name, bio, avatar, role)
+- **Bookmark** — saved verses/resources per user
+- **Progress** — reading plan + devotional completion tracking
+- **PrayerRequest** — community prayer requests
+- **EmailPreference** — email subscription settings
+- **Session** — NextAuth sessions
+- **AnalyticsEvent** — user activity events
+
+## Production Checklist
+
+- [ ] Run `npm audit` and fix vulnerabilities
+- [ ] Setup actual auth provider (Google/GitHub/Auth0/Clerk/Supabase)
+- [ ] Configure email provider (Resend/SendGrid) + `EMAIL_FROM`
+- [ ] Setup Bible API key (optional)
+- [ ] Configure cron scheduler (EasyCron, GitHub Actions, etc.)
+- [ ] Add tests (Vitest/Jest for units, Playwright for E2E)
+- [ ] Deploy to Vercel, AWS, or your host
+- [ ] Setup monitoring (Sentry, Datadog)
+- [ ] Add privacy policy, TOS
+- [ ] Enable HTTPS + secure headers (CSP)
+
+## Deploy
+
+```bash
+# Vercel (easiest for Next.js)
+npm install -g vercel
+vercel
+
+# Or manually:
+npm run build
+npm run start
+
 
 ## Deploy on Vercel
 
@@ -74,3 +195,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - `npm run dev`
 
 # christian_study_guide
+```

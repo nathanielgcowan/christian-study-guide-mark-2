@@ -61,6 +61,24 @@ function Header() {
               Register
             </Link>
             <Link
+              href="/user/profile"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              My Profile
+            </Link>
+            <Link
+              href="/user/bookmarks"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              My Bookmarks
+            </Link>
+            <Link
+              href="/user/prayer-requests"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Prayer Requests
+            </Link>
+            <Link
               href="/admin/analytics"
               className="text-slate-600 hover:text-slate-900 transition"
             >

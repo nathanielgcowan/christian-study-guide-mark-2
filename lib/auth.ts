@@ -1,14 +1,12 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "./prisma";
-import { verifyPassword } from "./password";
+import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/password";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "nathaniel.g.cowan@gmail.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin-password";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
   },
