@@ -11,7 +11,7 @@ function Header() {
           <Link href="/" className="text-xl font-bold text-slate-900">
             Christian Study Guide
           </Link>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-4 md:gap-6">
             <Link
               href="/"
               className="text-slate-600 hover:text-slate-900 transition"
@@ -23,6 +23,36 @@ function Header() {
               className="text-slate-600 hover:text-slate-900 transition"
             >
               Blog
+            </Link>
+            <Link
+              href="/reading-plans"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Reading Plans
+            </Link>
+            <Link
+              href="/prayer-journal"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Prayer Journal
+            </Link>
+            <Link
+              href="/devotionals"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Devotionals
+            </Link>
+            <Link
+              href="/scripture-memory"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Memory
+            </Link>
+            <Link
+              href="/resources"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Resources
             </Link>
           </div>
         </nav>
