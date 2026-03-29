@@ -54,6 +54,12 @@ function Header() {
             >
               Resources
             </Link>
+            <Link
+              href="/admin/analytics"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Admin Analytics
+            </Link>
           </div>
         </nav>
       </div>
