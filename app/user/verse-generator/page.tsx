@@ -212,6 +212,7 @@ export default function VerseImageGeneratorPage() {
               <button
                 onClick={handleGenerateImage}
                 disabled={loading}
+                aria-label="Generate verse image"
                 className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? "Generating..." : "Generate Image"}
@@ -220,12 +221,14 @@ export default function VerseImageGeneratorPage() {
                 <>
                   <button
                     onClick={downloadImage}
+                    aria-label="Download verse image"
                     className="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
                   >
                     Download
                   </button>
                   <button
                     onClick={shareImage}
+                    aria-label="Share verse image link"
                     className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
                   >
                     Share Link

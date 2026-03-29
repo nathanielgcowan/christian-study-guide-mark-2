@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       height: 630,
     });
 
-    return new NextResponse(imageBuffer, {
+    return new NextResponse(Uint8Array.from(imageBuffer), {
       headers: {
         "Content-Type": "image/png",
         "Cache-Control": "public, max-age=86400",

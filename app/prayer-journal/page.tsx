@@ -277,6 +277,7 @@ export default function PrayerJournal() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilter("all")}
+                aria-label="Show all prayers"
                 className={`rounded-xl px-4 py-2 font-medium transition ${
                   filter === "all"
                     ? "bg-blue-600 text-white"
@@ -287,6 +288,7 @@ export default function PrayerJournal() {
               </button>
               <button
                 onClick={() => setFilter("unanswered")}
+                aria-label="Show unanswered prayers"
                 className={`rounded-xl px-4 py-2 font-medium transition ${
                   filter === "unanswered"
                     ? "bg-blue-600 text-white"
@@ -297,6 +299,7 @@ export default function PrayerJournal() {
               </button>
               <button
                 onClick={() => setFilter("answered")}
+                aria-label="Show answered prayers"
                 className={`rounded-xl px-4 py-2 font-medium transition ${
                   filter === "answered"
                     ? "bg-blue-600 text-white"

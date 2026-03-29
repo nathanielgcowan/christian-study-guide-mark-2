@@ -164,6 +164,7 @@ function HeroSection({
               </div>
               <button
                 onClick={nextVerse}
+                aria-label="Show new verse"
                 className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
                 New Verse

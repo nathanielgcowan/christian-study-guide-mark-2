@@ -475,6 +475,7 @@ export default function ScriptureMemory() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilter("all")}
+                aria-label="Show all verses"
                 className={`rounded-xl px-4 py-2 font-medium transition ${
                   filter === "all"
                     ? "bg-blue-600 text-white"
@@ -485,6 +486,7 @@ export default function ScriptureMemory() {
               </button>
               <button
                 onClick={() => setFilter("unmastered")}
+                aria-label="Show learning verses"
                 className={`rounded-xl px-4 py-2 font-medium transition ${
                   filter === "unmastered"
                     ? "bg-blue-600 text-white"
@@ -495,6 +497,7 @@ export default function ScriptureMemory() {
               </button>
               <button
                 onClick={() => setFilter("mastered")}
+                aria-label="Show mastered verses"
                 className={`rounded-xl px-4 py-2 font-medium transition ${
                   filter === "mastered"
                     ? "bg-blue-600 text-white"
@@ -505,6 +508,7 @@ export default function ScriptureMemory() {
               </button>
               <button
                 onClick={() => setFilter("due")}
+                aria-label="Show verses needing review"
                 className={`rounded-xl px-4 py-2 font-medium transition ${
                   filter === "due"
                     ? "bg-blue-600 text-white"

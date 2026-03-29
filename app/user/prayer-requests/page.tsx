@@ -65,6 +65,7 @@ export default function PrayerRequestsPage() {
       {status === "authenticated" && (
         <button
           onClick={() => setShowForm(!showForm)}
+          aria-label="Toggle prayer request form"
           className="mb-6 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
           {showForm ? "Cancel" : "Submit Prayer Request"}

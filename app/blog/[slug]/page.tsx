@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ClientSocialShare from "../../../components/ClientSocialShare";
@@ -10,7 +9,9 @@ function Header() {
         <nav className="flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-slate-900">
             Christian Study Guide
-
+          </Link>
+          <div className="flex gap-6">
+            <Link
               href="/prayer-journal"
               className="text-slate-600 hover:text-slate-900 transition"
             >
@@ -103,30 +104,31 @@ const posts = {
 </blockquote>
 
 <blockquote>
-<p>"For the wages of sin is death, but the free gift of God is eternal life in Christ Jesus our Lord." - Romans 6:23</p>
-</blockquote>
-
-<p>The gospel is not just information—it's the power of God for salvation to everyone who believes (Romans 1:16). It's the foundation of our faith and the source of our hope.</p>
-    `,
-  },
-  "prayer-power-of-faith": {
-    title: "The Power of Prayer: Connecting with God Through Faith",
-    date: "March 29, 2026",
-    content: `
-<h1>The Power of Prayer: Connecting with God Through Faith</h1>
-
-<p>Prayer is one of the most powerful tools available to believers. It's our direct line of communication with the Creator of the universe, and through it, we can experience God's presence, guidance, and power in our lives.</p>
-
-<h2>What is Prayer?</h2>
-
-<p>Prayer is simply talking to God. It's not about using fancy words or following a specific formula—it's about having an honest conversation with your Heavenly Father.</p>
-
-<h2>The Different Types of Prayer</h2>
-
-<h3>1. Adoration</h3>
-<p>Praising God for who He is and what He has done.</p>
-
-<h3>2. Confession</h3>
+          <div className="flex gap-6">
+            <Link
+              href="/prayer-journal"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Prayer Journal
+            </Link>
+            <Link
+              href="/devotionals"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Devotionals
+            </Link>
+            <Link
+              href="/scripture-memory"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Memory
+            </Link>
+            <Link
+              href="/resources"
+              className="text-slate-600 hover:text-slate-900 transition"
+            >
+              Resources
+            </Link>
 <p>Admitting our sins and receiving God's forgiveness.</p>
 
 <h3>3. Thanksgiving</h3>
@@ -808,7 +810,10 @@ export default async function BlogPost({ params }: PageProps) {
             {post.title}
           </h1>
           <div className="mt-4 flex justify-end">
-            <ClientSocialShare text={`Read this blog post: ${post.title}`} url={`https://yourdomain.com/blog/${slug}`} />
+            <ClientSocialShare
+              text={`Read this blog post: ${post.title}`}
+              url={`https://yourdomain.com/blog/${slug}`}
+            />
           </div>
         </div>
 
