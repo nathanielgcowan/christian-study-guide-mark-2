@@ -25,7 +25,6 @@ export const admin = {
   email: "nathaniel.g.cowan@gmail.com",
 };
 
-
 import BibleClientWidgets from "../components/BibleClientWidgets";
 
 export default function RootLayout({
