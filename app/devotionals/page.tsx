@@ -5,7 +5,9 @@ import { getPassage, BiblePassageVerse } from "../../lib/bible";
 import Link from "next/link";
 
 import dynamic from "next/dynamic";
-const SocialShare = dynamic(() => import("../../components/SocialShare"), { ssr: false });
+const SocialShare = dynamic(() => import("../../components/SocialShare"), {
+  ssr: false,
+});
 
 function Header() {
   return (
@@ -241,7 +243,9 @@ function DevotionalCard({
             — {devotional.verse.reference}
           </cite>
           <div className="mt-4 flex justify-end">
-            <SocialShare text={`Read today's devotional: ${devotional.title}`} />
+            <SocialShare
+              text={`Read today's devotional: ${devotional.title}`}
+            />
           </div>
         </div>
       </div>

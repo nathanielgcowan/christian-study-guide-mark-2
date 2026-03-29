@@ -6,7 +6,9 @@ export default function DarkModeToggle() {
 
   useEffect(() => {
     // On mount, check system preference or localStorage
-    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const systemDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     const saved = localStorage.getItem("theme");
     if (saved === "dark" || (!saved && systemDark)) {
       document.documentElement.classList.add("dark");

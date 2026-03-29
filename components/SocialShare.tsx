@@ -7,7 +7,7 @@ const getShareUrl = (platform: string, url: string, text: string) => {
     case "twitter":
       return `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
     case "whatsapp":
-      return `https://api.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + url)}`;
+      return `https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`;
     case "linkedin":
       return `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
     default:
@@ -21,7 +21,8 @@ interface SocialShareProps {
 }
 
 const SocialShare: React.FC<SocialShareProps> = ({ url, text }) => {
-  const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
+  const shareUrl =
+    url || (typeof window !== "undefined" ? window.location.href : "");
   const shareText = text || "Check this out!";
 
   return (
@@ -32,7 +33,9 @@ const SocialShare: React.FC<SocialShareProps> = ({ url, text }) => {
         rel="noopener noreferrer"
         aria-label="Share on Facebook"
       >
-        <span role="img" aria-label="Facebook">📘</span>
+        <span role="img" aria-label="Facebook">
+          📘
+        </span>
       </a>
       <a
         href={getShareUrl("twitter", shareUrl, shareText)}
@@ -40,7 +43,9 @@ const SocialShare: React.FC<SocialShareProps> = ({ url, text }) => {
         rel="noopener noreferrer"
         aria-label="Share on Twitter"
       >
-        <span role="img" aria-label="Twitter">🐦</span>
+        <span role="img" aria-label="Twitter">
+          🐦
+        </span>
       </a>
       <a
         href={getShareUrl("whatsapp", shareUrl, shareText)}
@@ -48,7 +53,9 @@ const SocialShare: React.FC<SocialShareProps> = ({ url, text }) => {
         rel="noopener noreferrer"
         aria-label="Share on WhatsApp"
       >
-        <span role="img" aria-label="WhatsApp">💬</span>
+        <span role="img" aria-label="WhatsApp">
+          💬
+        </span>
       </a>
       <a
         href={getShareUrl("linkedin", shareUrl, shareText)}
@@ -56,7 +63,9 @@ const SocialShare: React.FC<SocialShareProps> = ({ url, text }) => {
         rel="noopener noreferrer"
         aria-label="Share on LinkedIn"
       >
-        <span role="img" aria-label="LinkedIn">💼</span>
+        <span role="img" aria-label="LinkedIn">
+          💼
+        </span>
       </a>
     </div>
   );

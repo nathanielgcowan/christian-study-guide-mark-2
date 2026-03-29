@@ -4,30 +4,100 @@ import { useState } from "react";
 import Link from "next/link";
 
 import dynamic from "next/dynamic";
-const DarkModeToggle = dynamic(() => import("../components/DarkModeToggle"), { ssr: false });
+const DarkModeToggle = dynamic(() => import("../components/DarkModeToggle"), {
+  ssr: false,
+});
 
 function Header() {
   return (
     <header className="border-b border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700">
       <div className="mx-auto max-w-6xl px-6 py-4">
         <nav className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-slate-900 dark:text-white">
+          <Link
+            href="/"
+            className="text-xl font-bold text-slate-900 dark:text-white"
+          >
             Christian Study Guide
           </Link>
           <div className="flex items-center gap-4 md:gap-6">
-            <Link href="/" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Home</Link>
-            <Link href="/blog" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Blog</Link>
-            <Link href="/reading-plans" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Reading Plans</Link>
-            <Link href="/prayer-journal" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Prayer Journal</Link>
-            <Link href="/devotionals" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Devotionals</Link>
-            <Link href="/scripture-memory" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Memory</Link>
-            <Link href="/resources" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Resources</Link>
-            <Link href="/auth/register" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Register</Link>
-            <Link href="/user/profile" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">My Profile</Link>
-            <Link href="/user/bookmarks" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">My Bookmarks</Link>
-            <Link href="/user/prayer-requests" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Prayer Requests</Link>
-            <Link href="/user/verse-generator" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Share Verse</Link>
-            <Link href="/admin/analytics" className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition">Admin Analytics</Link>
+            <Link
+              href="/"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Home
+            </Link>
+            <Link
+              href="/blog"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Blog
+            </Link>
+            <Link
+              href="/reading-plans"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Reading Plans
+            </Link>
+            <Link
+              href="/prayer-journal"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Prayer Journal
+            </Link>
+            <Link
+              href="/devotionals"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Devotionals
+            </Link>
+            <Link
+              href="/scripture-memory"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Memory
+            </Link>
+            <Link
+              href="/resources"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Resources
+            </Link>
+            <Link
+              href="/auth/register"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Register
+            </Link>
+            <Link
+              href="/user/profile"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              My Profile
+            </Link>
+            <Link
+              href="/user/bookmarks"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              My Bookmarks
+            </Link>
+            <Link
+              href="/user/prayer-requests"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Prayer Requests
+            </Link>
+            <Link
+              href="/user/verse-generator"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Share Verse
+            </Link>
+            <Link
+              href="/admin/analytics"
+              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
+            >
+              Admin Analytics
+            </Link>
             <DarkModeToggle />
           </div>
         </nav>
