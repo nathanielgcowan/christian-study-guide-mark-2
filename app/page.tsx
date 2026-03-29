@@ -126,7 +126,7 @@ function HeroSection({
           <p className="mb-3 inline-block rounded-full bg-blue-100 px-4 py-1 text-sm font-medium text-blue-700">
             Christian Study Guide
           </p>
-          <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-6xl">
+          <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-6xl text-white">
             Grow in God’s Word with a simple Christian study website
           </h1>
           <p className="mb-6 max-w-xl text-lg text-slate-600">
