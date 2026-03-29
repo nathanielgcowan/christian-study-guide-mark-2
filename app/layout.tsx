@@ -25,14 +25,8 @@ export const admin = {
   email: "nathaniel.g.cowan@gmail.com",
 };
 
-import dynamic from "next/dynamic";
-const BibleTranslations = dynamic(
-  () => import("../components/BibleTranslations"),
-  { ssr: false },
-);
-const BibleSearch = dynamic(() => import("../components/BibleSearch"), {
-  ssr: false,
-});
+
+import BibleClientWidgets from "../components/BibleClientWidgets";
 
 export default function RootLayout({
   children,
@@ -45,8 +39,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <BibleSearch />
-          <BibleTranslations />
+          <BibleClientWidgets />
           {children}
         </Providers>
       </body>
