@@ -1,41 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-
-function Header() {
-  return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-4">
-        <nav className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-slate-900">
-            Christian Study Guide
-          </Link>
-          <div className="flex gap-6">
-            <Link
-              href="/"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Home
-            </Link>
-            <Link
-              href="/blog"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/prayer-journal"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Prayer Journal
-            </Link>
-          </div>
-        </nav>
-      </div>
-    </header>
-  );
-}
+import { useEffect, useState } from "react";
 
 interface PrayerEntry {
   id: string;
@@ -69,42 +34,39 @@ function PrayerEntryForm({
   const [content, setContent] = useState("");
   const [category, setCategory] = useState(categories[0]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (title.trim() && content.trim()) {
-      onAddEntry({
-        date: new Date().toISOString().split("T")[0],
-        title: title.trim(),
-        content: content.trim(),
-        category,
-        answered: false,
-      });
-      setTitle("");
-      setContent("");
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!title.trim() || !content.trim()) {
+      return;
     }
+
+    onAddEntry({
+      date: new Date().toISOString().split("T")[0],
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      answered: false,
+    });
+    setTitle("");
+    setContent("");
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-3xl bg-white p-6 shadow-md"
-    >
-      <h3 className="mb-4 text-xl font-bold">Add New Prayer</h3>
-      <div className="mb-4">
+    <form onSubmit={handleSubmit} className="prayer-journal-card prayer-journal-form">
+      <h3>Add New Prayer</h3>
+      <div className="prayer-journal-stack">
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(event) => setTitle(event.target.value)}
           placeholder="Prayer title..."
-          className="w-full rounded-2xl border border-slate-200 p-3 outline-none focus:border-blue-500"
+          className="minimal-input"
           required
         />
-      </div>
-      <div className="mb-4">
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full rounded-2xl border border-slate-200 p-3 outline-none focus:border-blue-500"
+          onChange={(event) => setCategory(event.target.value)}
+          className="minimal-select"
         >
           {categories.map((cat) => (
             <option key={cat} value={cat}>
@@ -112,21 +74,16 @@ function PrayerEntryForm({
             </option>
           ))}
         </select>
-      </div>
-      <div className="mb-4">
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(event) => setContent(event.target.value)}
           placeholder="Write your prayer here..."
           rows={6}
-          className="w-full rounded-2xl border border-slate-200 p-3 outline-none focus:border-blue-500"
+          className="minimal-textarea prayer-journal-textarea"
           required
         />
       </div>
-      <button
-        type="submit"
-        className="w-full rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
-      >
+      <button type="submit" className="button-primary">
         Add Prayer
       </button>
     </form>
@@ -141,50 +98,57 @@ function PrayerEntryCard({
   onMarkAnswered: (id: string) => void;
 }) {
   return (
-    <div
-      className={`rounded-3xl p-6 shadow-md ${entry.answered ? "bg-green-50 border border-green-200" : "bg-white"}`}
+    <article
+      className={`prayer-journal-card prayer-entry-card ${entry.answered ? "prayer-entry-card-answered" : ""}`}
     >
-      <div className="mb-3 flex items-start justify-between">
+      <div className="prayer-entry-header">
         <div>
-          <h4 className="text-lg font-semibold">{entry.title}</h4>
-          <div className="flex items-center gap-3 text-sm text-slate-500">
-            <span>📅 {new Date(entry.date).toLocaleDateString()}</span>
-            <span>🏷️ {entry.category}</span>
-            {entry.answered && entry.answeredDate && (
-              <span className="text-green-600">
-                ✅ Answered {new Date(entry.answeredDate).toLocaleDateString()}
+          <h4>{entry.title}</h4>
+          <div className="prayer-entry-meta">
+            <span>{new Date(entry.date).toLocaleDateString()}</span>
+            <span>{entry.category}</span>
+            {entry.answered && entry.answeredDate ? (
+              <span className="prayer-entry-answered">
+                Answered {new Date(entry.answeredDate).toLocaleDateString()}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
-        {!entry.answered && (
+        {!entry.answered ? (
           <button
+            type="button"
             onClick={() => onMarkAnswered(entry.id)}
-            className="rounded-xl bg-green-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-green-700"
+            className="button-secondary"
           >
             Mark Answered
           </button>
-        )}
+        ) : null}
       </div>
-      <p className="text-slate-700 whitespace-pre-wrap">{entry.content}</p>
-    </div>
+      <p className="prayer-entry-content">{entry.content}</p>
+    </article>
   );
 }
 
 export default function PrayerJournal() {
-  const [entries, setEntries] = useState<PrayerEntry[]>([]);
+  const [entries, setEntries] = useState<PrayerEntry[]>(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+
+    const saved = localStorage.getItem("prayerJournal");
+    if (!saved) {
+      return [];
+    }
+
+    try {
+      return JSON.parse(saved) as PrayerEntry[];
+    } catch {
+      return [];
+    }
+  });
   const [filter, setFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load entries from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("prayerJournal");
-    if (saved) {
-      setEntries(JSON.parse(saved));
-    }
-  }, []);
-
-  // Save entries to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("prayerJournal", JSON.stringify(entries));
   }, [entries]);
@@ -227,132 +191,109 @@ export default function PrayerJournal() {
 
   const stats = {
     total: entries.length,
-    answered: entries.filter((e) => e.answered).length,
-    unanswered: entries.filter((e) => !e.answered).length,
+    answered: entries.filter((entry) => entry.answered).length,
+    unanswered: entries.filter((entry) => !entry.answered).length,
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white text-slate-900">
-      <Header />
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-extrabold md:text-5xl">
-            Prayer Journal
-          </h1>
-          <p className="text-lg text-slate-600">
-            Record your prayers, track answers, and grow in your prayer life.
-          </p>
-        </div>
+    <main id="main-content" className="page-shell content-shell content-stack">
+      <section className="content-hero prayer-journal-hero">
+        <p className="eyebrow">Prayer journal</p>
+        <h1>A quieter space for prayers, requests, and answered mercies.</h1>
+        <p className="content-lead">
+          Record your prayers, track answers, and return to what God has done
+          with a calmer layout around the journal itself.
+        </p>
+      </section>
 
-        {/* Stats */}
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl bg-white p-6 text-center shadow-md">
-            <div className="text-2xl font-bold text-blue-600">
-              {stats.total}
-            </div>
-            <div className="text-slate-600">Total Prayers</div>
-          </div>
-          <div className="rounded-3xl bg-white p-6 text-center shadow-md">
-            <div className="text-2xl font-bold text-green-600">
-              {stats.answered}
-            </div>
-            <div className="text-slate-600">Answered</div>
-          </div>
-          <div className="rounded-3xl bg-white p-6 text-center shadow-md">
-            <div className="text-2xl font-bold text-orange-600">
-              {stats.unanswered}
-            </div>
-            <div className="text-slate-600">Awaiting Answer</div>
-          </div>
-        </div>
+      <section className="prayer-journal-stats">
+        <article className="prayer-journal-stat">
+          <strong>{stats.total}</strong>
+          <span>Total Prayers</span>
+        </article>
+        <article className="prayer-journal-stat prayer-journal-stat-answered">
+          <strong>{stats.answered}</strong>
+          <span>Answered</span>
+        </article>
+        <article className="prayer-journal-stat prayer-journal-stat-waiting">
+          <strong>{stats.unanswered}</strong>
+          <span>Awaiting Answer</span>
+        </article>
+      </section>
 
-        {/* Add New Prayer */}
-        <div className="mb-8">
+      <section className="prayer-journal-layout">
+        <div>
           <PrayerEntryForm onAddEntry={addEntry} />
         </div>
 
-        {/* Filters and Search */}
-        <div className="mb-8 rounded-3xl bg-white p-6 shadow-md">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilter("all")}
-                aria-label="Show all prayers"
-                className={`rounded-xl px-4 py-2 font-medium transition ${
-                  filter === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                All Prayers
-              </button>
-              <button
-                onClick={() => setFilter("unanswered")}
-                aria-label="Show unanswered prayers"
-                className={`rounded-xl px-4 py-2 font-medium transition ${
-                  filter === "unanswered"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                Unanswered
-              </button>
-              <button
-                onClick={() => setFilter("answered")}
-                aria-label="Show answered prayers"
-                className={`rounded-xl px-4 py-2 font-medium transition ${
-                  filter === "answered"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                Answered
-              </button>
-              {categories.map((category) => (
+        <div className="prayer-journal-stack">
+          <section className="prayer-journal-card prayer-journal-toolbar">
+            <div className="prayer-journal-toolbar-row">
+              <div className="prayer-journal-filter-row">
                 <button
-                  key={category}
-                  onClick={() => setFilter(category)}
-                  className={`rounded-xl px-4 py-2 font-medium transition ${
-                    filter === category
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                  type="button"
+                  onClick={() => setFilter("all")}
+                  className={`prayer-journal-filter ${filter === "all" ? "prayer-journal-filter-active" : ""}`}
                 >
-                  {category}
+                  All Prayers
                 </button>
-              ))}
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search prayers..."
-              className="rounded-2xl border border-slate-200 px-4 py-2 outline-none focus:border-blue-500"
-            />
-          </div>
-        </div>
+                <button
+                  type="button"
+                  onClick={() => setFilter("unanswered")}
+                  className={`prayer-journal-filter ${filter === "unanswered" ? "prayer-journal-filter-active" : ""}`}
+                >
+                  Unanswered
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("answered")}
+                  className={`prayer-journal-filter ${filter === "answered" ? "prayer-journal-filter-active" : ""}`}
+                >
+                  Answered
+                </button>
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setFilter(category)}
+                    className={`prayer-journal-filter ${filter === category ? "prayer-journal-filter-active" : ""}`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
 
-        {/* Prayer Entries */}
-        <div className="space-y-6">
-          {filteredEntries.length > 0 ? (
-            filteredEntries.map((entry) => (
-              <PrayerEntryCard
-                key={entry.id}
-                entry={entry}
-                onMarkAnswered={markAnswered}
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search prayers..."
+                className="minimal-input prayer-journal-search"
               />
-            ))
-          ) : (
-            <div className="rounded-3xl bg-white p-12 text-center shadow-md">
-              <div className="text-6xl mb-4">🙏</div>
-              <h3 className="mb-2 text-xl font-bold">No prayers found</h3>
-              <p className="text-slate-600">
-                {entries.length === 0
-                  ? "Start your prayer journey by adding your first prayer above."
-                  : "Try adjusting your filters or search terms."}
-              </p>
             </div>
-          )}
+          </section>
+
+          <section className="prayer-journal-stack">
+            {filteredEntries.length > 0 ? (
+              filteredEntries.map((entry) => (
+                <PrayerEntryCard
+                  key={entry.id}
+                  entry={entry}
+                  onMarkAnswered={markAnswered}
+                />
+              ))
+            ) : (
+              <div className="prayer-journal-card prayer-journal-empty">
+                <div className="prayer-journal-empty-mark">Amen</div>
+                <h3>No prayers found</h3>
+                <p>
+                  {entries.length === 0
+                    ? "Start your prayer journey by adding your first prayer above."
+                    : "Try adjusting your filters or search terms."}
+                </p>
+              </div>
+            )}
+          </section>
         </div>
       </section>
     </main>

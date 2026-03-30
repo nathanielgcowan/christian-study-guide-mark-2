@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { generateVerseImage } from "@/lib/verse-image";
 
 interface Props {
   searchParams: Promise<{
@@ -7,6 +6,7 @@ interface Props {
     reference?: string;
     bg?: string;
     text?: string;
+    theme?: string;
   }>;
 }
 
@@ -18,8 +18,9 @@ export async function generateMetadata({
   const reference = params.reference || "John 3:16";
   const bg = params.bg || "#1f2937";
   const text = params.text || "#ffffff";
+  const theme = params.theme || "minimal";
 
-  const ogImageUrl = `/api/og/verse?verse=${encodeURIComponent(verse)}&reference=${encodeURIComponent(reference)}&bg=${encodeURIComponent(bg)}&text=${encodeURIComponent(text)}`;
+  const ogImageUrl = `/api/og/verse?verse=${encodeURIComponent(verse)}&reference=${encodeURIComponent(reference)}&bg=${encodeURIComponent(bg)}&text=${encodeURIComponent(text)}&theme=${encodeURIComponent(theme)}`;
 
   return {
     title: `${reference} - Christian Study Guide`,
@@ -50,12 +51,13 @@ import VerseShareClient from "./VerseShareClient";
 export default function ShareVersePage({
   searchParams,
 }: {
-  searchParams?: { verse?: string; reference?: string };
+  searchParams?: { verse?: string; reference?: string; theme?: string };
 }) {
   return (
     <VerseShareClient
       verse={searchParams?.verse}
       reference={searchParams?.reference}
+      theme={searchParams?.theme}
     />
   );
 }

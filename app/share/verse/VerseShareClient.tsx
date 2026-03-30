@@ -1,53 +1,210 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function VerseShareClient({
   verse,
   reference,
+  theme = "minimal",
 }: {
   verse?: string;
   reference?: string;
+  theme?: string;
 }) {
+  const [status, setStatus] = useState<string | null>(null);
   const currentUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     return window.location.href;
   }, []);
+  const verseText = verse || "For God so loved the world...";
+  const verseReference = reference || "John 3:16";
+
+  const imageUrl = useMemo(() => {
+    const params = new URLSearchParams({
+      verse: verseText,
+      reference: verseReference,
+      bg: "#111111",
+      text: "#ffffff",
+      theme,
+    });
+
+    return `/api/og/verse?${params.toString()}`;
+  }, [theme, verseReference, verseText]);
+
+  async function copyLink() {
+    if (!currentUrl) return;
+    await navigator.clipboard.writeText(currentUrl);
+    setStatus("Share link copied.");
+  }
+
+  async function copyImageUrl() {
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : "";
+    await navigator.clipboard.writeText(`${origin}${imageUrl}`);
+    setStatus("Image URL copied.");
+  }
+
+  async function downloadImage() {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = `verse-${verseReference.replace(/\s+/g, "-").toLowerCase()}.png`;
+    link.click();
+    URL.revokeObjectURL(objectUrl);
+    setStatus("Image downloaded.");
+  }
+
+  async function shareToInstagram() {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File(
+        [blob],
+        `verse-${verseReference.replace(/\s+/g, "-").toLowerCase()}.png`,
+        { type: "image/png" },
+      );
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] }) &&
+        navigator.share
+      ) {
+        await navigator.share({
+          title: verseReference,
+          text: "Choose Instagram from the share sheet to post this image.",
+          files: [file],
+        });
+        setStatus("Choose Instagram in the share sheet to finish posting.");
+        return;
+      }
+
+      await downloadImage();
+      setStatus(
+        "Instagram direct upload is not available here. The image was downloaded so you can post it in Instagram manually.",
+      );
+    } catch (error) {
+      console.error(error);
+      setStatus("Instagram sharing was canceled or unavailable.");
+    }
+  }
+
+  async function shareImage() {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const file = new File(
+        [blob],
+        `verse-${verseReference.replace(/\s+/g, "-").toLowerCase()}.png`,
+        { type: "image/png" },
+      );
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] }) &&
+        navigator.share
+      ) {
+        await navigator.share({
+          title: verseReference,
+          text: verseText,
+          files: [file],
+        });
+        setStatus("Image shared.");
+        return;
+      }
+
+      if (navigator.share) {
+        await navigator.share({
+          title: verseReference,
+          text: verseText,
+          url: currentUrl,
+        });
+        setStatus("Share sheet opened.");
+        return;
+      }
+
+      await copyImageUrl();
+    } catch (error) {
+      console.error(error);
+      setStatus("Sharing was canceled or unavailable.");
+    }
+  }
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
-      <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-lg">
-        <h1 className="mb-4 text-3xl font-bold">Share This Verse</h1>
-        <p className="mb-6 text-slate-600">
-          This verse has been shared on social media. Copy the URL to share with
-          others!
+    <main id="main-content" className="page-shell content-shell-narrow content-stack">
+      <section className="content-hero">
+        <p className="eyebrow">Verse image sharing</p>
+        <h1>Share the verse as an image, not just a link.</h1>
+        <p className="content-lead">
+          Preview the generated artwork, download it, open the native share
+          sheet, or copy the image URL for posting anywhere.
         </p>
+      </section>
 
-        <div className="mb-6 rounded-lg bg-slate-100 px-4 py-2">
-          <p className="text-sm text-slate-700">
-            <code>{currentUrl || "Loading link..."}</code>
-          </p>
+      <section className="content-card content-stack">
+        <div className="share-image-preview">
+          <Image
+            src={imageUrl}
+            alt={`${verseReference} verse share image`}
+            width={1200}
+            height={630}
+            className="share-image-preview-media"
+            unoptimized
+          />
         </div>
 
-        <div className="space-y-3">
+        <div className="content-card-note">
+          <strong>{verseReference}</strong>
+          <p>{verseText}</p>
+        </div>
+
+        <div className="share-actions">
+          <button onClick={() => void shareImage()} className="button-primary">
+            Share image
+          </button>
           <button
-            onClick={() => {
-              if (!currentUrl) return;
-              navigator.clipboard.writeText(currentUrl);
-              alert("URL copied to clipboard!");
-            }}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            onClick={() => void shareToInstagram()}
+            className="button-secondary button-instagram"
           >
-            Copy Link
+            Instagram
+          </button>
+          <button
+            onClick={() => void downloadImage()}
+            className="button-secondary"
+          >
+            Download PNG
           </button>
           <a
-            href={`/user/verse-generator?verse=${encodeURIComponent(verse || "")}&&reference=${encodeURIComponent(reference || "")}`}
-            className="block rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
+            href={imageUrl}
+            download={`verse-${verseReference.replace(/\s+/g, "-").toLowerCase()}.png`}
+            className="button-secondary"
           >
-            Create Another Verse
+            Save image
           </a>
+          <button onClick={() => void copyImageUrl()} className="button-secondary">
+            Copy image URL
+          </button>
+          <button onClick={() => void copyLink()} className="button-secondary">
+            Copy Link
+          </button>
         </div>
-      </div>
+
+        <div className="content-card-note">
+          <code>{currentUrl || "Loading link..."}</code>
+        </div>
+
+        {status ? <p className="share-status">{status}</p> : null}
+
+        <Link
+          href={`/user/verse-generator?verse=${encodeURIComponent(verseText)}&&reference=${encodeURIComponent(verseReference)}`}
+          className="button-secondary"
+        >
+          Create Another Verse
+        </Link>
+      </section>
     </main>
   );
 }

@@ -1,88 +1,141 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth-server";
 
-export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+async function ensureUserProfile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
+) {
+  const { error } = await supabase.from("user_profiles").upsert(
+    {
+      id: user.id,
+      email: user.email ?? `${user.id}@example.com`,
+      full_name: user.user_metadata?.full_name ?? null,
+    },
+    { onConflict: "id" },
+  );
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: { bookmarks: { orderBy: { createdAt: "desc" } } },
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({ bookmarks: user.bookmarks });
+  return error;
 }
 
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const { type, reference, title } = await request.json();
-  if (!type || !reference) {
+    const supabase = await createClient();
+    const profileError = await ensureUserProfile(supabase, user);
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from("user_bookmarks")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    const bookmarks = (data ?? []).map((bookmark) => ({
+      id: bookmark.id,
+      type: bookmark.category ?? "saved passage",
+      reference: bookmark.reference,
+      title: null,
+      createdAt: bookmark.created_at,
+    }));
+
+    return NextResponse.json({ bookmarks });
+  } catch {
     return NextResponse.json(
-      { error: "Type and reference are required" },
-      { status: 400 },
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  });
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const bookmark = await prisma.bookmark.upsert({
-    where: {
-      userId_type_reference: {
-        userId: user.id,
-        type,
-        reference,
-      },
-    },
-    update: {},
-    create: {
-      userId: user.id,
-      type,
-      reference,
-      title: title ?? null,
-    },
-  });
-
-  return NextResponse.json(bookmark);
 }
 
-export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { type, reference, title } = await request.json();
+    if (!reference) {
+      return NextResponse.json(
+        { error: "Reference is required" },
+        { status: 400 },
+      );
+    }
+
+    const supabase = await createClient();
+    const profileError = await ensureUserProfile(supabase, user);
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from("user_bookmarks")
+      .insert({
+        user_id: user.id,
+        reference,
+        category: type ?? title ?? null,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      id: data.id,
+      type: data.category ?? "saved passage",
+      reference: data.reference,
+      title: null,
+      createdAt: data.created_at,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
+}
 
-  const { id } = await request.json();
-  if (!id) {
-    return NextResponse.json({ error: "ID required" }, { status: 400 });
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await request.json();
+    if (!id) {
+      return NextResponse.json({ error: "ID required" }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("user_bookmarks")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  });
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  await prisma.bookmark.deleteMany({
-    where: { id, userId: user.id },
-  });
-
-  return NextResponse.json({ success: true });
 }

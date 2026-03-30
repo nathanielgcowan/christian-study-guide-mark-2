@@ -2,20 +2,55 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import {
+  SavedVerseImage,
+  VERSE_IMAGE_GALLERY_KEY,
+} from "@/lib/verse-gallery";
 
-interface ShareImage {
-  url: string;
-  timestamp: number;
-}
+const presets = [
+  {
+    name: "Ink",
+    bg: "#111111",
+    text: "#f7f5ef",
+  },
+  {
+    name: "Stone",
+    bg: "#2a2a28",
+    text: "#f1eee7",
+  },
+  {
+    name: "Forest",
+    bg: "#1d3a31",
+    text: "#f0f6ee",
+  },
+  {
+    name: "Midnight",
+    bg: "#1c2333",
+    text: "#eef2ff",
+  },
+];
+
+const artworkThemes = [
+  { id: "minimal", name: "Minimal" },
+  { id: "desert", name: "Desert" },
+  { id: "cross", name: "Cross" },
+  { id: "shepherd", name: "Shepherd" },
+  { id: "dove", name: "Dove" },
+  { id: "mountain", name: "Mountain" },
+] as const;
 
 export default function VerseImageGeneratorPage() {
   const [verse, setVerse] = useState("For God so loved the world...");
   const [reference, setReference] = useState("John 3:16");
-  const [bgColor, setBgColor] = useState("#1f2937");
-  const [textColor, setTextColor] = useState("#ffffff");
+  const [bgColor, setBgColor] = useState("#111111");
+  const [textColor, setTextColor] = useState("#f7f5ef");
+  const [theme, setTheme] =
+    useState<(typeof artworkThemes)[number]["id"]>("minimal");
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [downloaded, setDownloaded] = useState(false);
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
 
   async function handleGenerateImage() {
     if (!verse.trim() || !reference.trim()) {
@@ -33,6 +68,7 @@ export default function VerseImageGeneratorPage() {
           reference,
           backgroundColor: bgColor,
           textColor,
+          theme,
         }),
       });
 
@@ -41,6 +77,7 @@ export default function VerseImageGeneratorPage() {
         const url = URL.createObjectURL(blob);
         setGeneratedImage(url);
         setDownloaded(false);
+        setShareStatus(null);
       } else {
         alert("Failed to generate image");
       }
@@ -62,227 +99,382 @@ export default function VerseImageGeneratorPage() {
     setDownloaded(true);
   }
 
-  function shareImage() {
+  async function saveToGallery() {
+    if (!generatedImage) return;
+
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+            return;
+          }
+
+          reject(new Error("Unable to convert image."));
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+
+      const nextItem: SavedVerseImage = {
+        id: `${reference}-${Date.now()}`,
+        verse,
+        reference,
+        theme,
+        bgColor,
+        textColor,
+        imageUrl: dataUrl,
+        createdAt: new Date().toISOString(),
+      };
+
+      const stored = window.localStorage.getItem(VERSE_IMAGE_GALLERY_KEY);
+      const parsed = stored ? (JSON.parse(stored) as SavedVerseImage[]) : [];
+      const nextGallery = [nextItem, ...parsed].slice(0, 24);
+
+      window.localStorage.setItem(
+        VERSE_IMAGE_GALLERY_KEY,
+        JSON.stringify(nextGallery),
+      );
+      setShareStatus("Saved to your verse image gallery.");
+    } catch (error) {
+      console.error(error);
+      setShareStatus("Unable to save this image to the gallery.");
+    }
+  }
+
+  function shareImagePage() {
     const params = new URLSearchParams({
       verse,
       reference,
       bg: bgColor,
       text: textColor,
+      theme,
     });
-    const shareUrl = `/share/verse?${params.toString()}`;
-    window.location.href = shareUrl;
+    window.location.href = `/share/verse?${params.toString()}`;
   }
 
-  const presets = [
-    {
-      name: "Dark Blue",
-      bg: "#1e3a8a",
-      text: "#ffffff",
-    },
-    {
-      name: "Deep Purple",
-      bg: "#5b21b6",
-      text: "#f3e8ff",
-    },
-    {
-      name: "Slate",
-      bg: "#1f2937",
-      text: "#f1f5f9",
-    },
-    {
-      name: "Forest",
-      bg: "#15803d",
-      text: "#dcfce7",
-    },
-  ];
+  async function shareToInstagram() {
+    if (!generatedImage) return;
+
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const file = new File(
+        [blob],
+        `verse-${reference.replace(/\s+/g, "-").toLowerCase()}.png`,
+        { type: "image/png" },
+      );
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] }) &&
+        navigator.share
+      ) {
+        await navigator.share({
+          title: reference,
+          text: "Choose Instagram from the share sheet to post this image.",
+          files: [file],
+        });
+        setShareStatus("Choose Instagram in the share sheet to finish posting.");
+        return;
+      }
+
+      downloadImage();
+      setShareStatus(
+        "Instagram direct upload is not available here. The image was downloaded so you can post it in Instagram manually.",
+      );
+    } catch (error) {
+      console.error(error);
+      setShareStatus("Instagram sharing was canceled or unavailable.");
+    }
+  }
+
+  async function quickShareImage() {
+    if (!generatedImage) return;
+
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const file = new File(
+        [blob],
+        `verse-${reference.replace(/\s+/g, "-").toLowerCase()}.png`,
+        { type: "image/png" },
+      );
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] }) &&
+        navigator.share
+      ) {
+        await navigator.share({
+          title: reference,
+          text: verse,
+          files: [file],
+        });
+        setShareStatus("Image shared.");
+        return;
+      }
+
+      shareImagePage();
+    } catch (error) {
+      console.error(error);
+      setShareStatus("Sharing was canceled or unavailable.");
+    }
+  }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mb-6">
-        <Link href="/" className="text-blue-600 hover:underline">
-          ← Back home
-        </Link>
-      </div>
+    <main id="main-content" className="page-shell content-shell verse-studio-shell">
+      <section className="content-hero verse-studio-hero">
+        <p className="eyebrow">Verse image studio</p>
+        <h1>Create a cleaner Scripture graphic in a few focused steps.</h1>
+        <p className="content-lead">
+          Write the verse, choose a restrained palette, preview the result, and
+          share a polished image without fighting a busy editor.
+        </p>
+        <div className="content-actions">
+          <Link href="/" className="button-secondary">
+            Back home
+          </Link>
+          <Link href="/images" className="button-secondary">
+            Open gallery
+          </Link>
+          <Link href="/share/verse" className="button-secondary">
+            Open share page
+          </Link>
+        </div>
+      </section>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* Editor */}
-        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-lg">
-          <h1 className="mb-6 text-3xl font-bold">
-            Bible Verse Image Generator
-          </h1>
+      <section className="verse-studio-grid">
+        <section className="content-card verse-studio-panel">
+          <div className="content-section-heading">
+            <p className="eyebrow">Compose</p>
+            <h2>Write the verse</h2>
+          </div>
 
-          <div className="space-y-4">
+          <div className="minimal-form-grid">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Verse Text
-              </label>
+              <label className="minimal-label">Verse text</label>
               <textarea
                 value={verse}
-                onChange={(e) => setVerse(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                rows={3}
+                onChange={(event) => setVerse(event.target.value)}
+                className="minimal-textarea verse-studio-textarea"
+                rows={5}
                 placeholder="Enter verse text..."
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Reference (e.g. John 3:16)
-              </label>
+              <label className="minimal-label">Reference</label>
               <input
                 type="text"
                 value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                onChange={(event) => setReference(event.target.value)}
+                className="minimal-input"
                 placeholder="John 3:16"
               />
             </div>
-
-            <div className="pt-4">
-              <h3 className="mb-3 text-sm font-semibold text-slate-700">
-                Color Presets
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {presets.map((preset) => (
-                  <button
-                    key={preset.name}
-                    onClick={() => {
-                      setBgColor(preset.bg);
-                      setTextColor(preset.text);
-                    }}
-                    className="rounded-lg p-3 text-left transition hover:scale-105"
-                    style={{
-                      backgroundColor: preset.bg,
-                      color: preset.text,
-                      border:
-                        bgColor === preset.bg
-                          ? "2px solid white"
-                          : "1px solid #e5e7eb",
-                    }}
-                  >
-                    {preset.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Background Color
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="h-10 w-16 rounded-lg border border-slate-300 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="flex-1 rounded-lg border border-slate-300 px-2 py-1 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Text Color
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    className="h-10 w-16 rounded-lg border border-slate-300 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    className="flex-1 rounded-lg border border-slate-300 px-2 py-1 text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-6">
-              <button
-                onClick={handleGenerateImage}
-                disabled={loading}
-                aria-label="Generate verse image"
-                className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? "Generating..." : "Generate Image"}
-              </button>
-              {generatedImage && (
-                <>
-                  <button
-                    onClick={downloadImage}
-                    aria-label="Download verse image"
-                    className="rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
-                  >
-                    Download
-                  </button>
-                  <button
-                    onClick={shareImage}
-                    aria-label="Share verse image link"
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
-                  >
-                    Share Link
-                  </button>
-                </>
-              )}
-            </div>
-
-            {downloaded && (
-              <p className="mt-3 text-sm text-emerald-600">
-                ✓ Image downloaded!
-              </p>
-            )}
           </div>
-        </div>
 
-        {/* Preview */}
-        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-lg">
-          <h2 className="mb-4 text-xl font-bold">Preview</h2>
+          <div className="content-section-heading">
+            <p className="eyebrow">Palette</p>
+            <h2>Choose a minimal tone</h2>
+          </div>
+
+          <div className="verse-preset-grid">
+            {presets.map((preset) => {
+              const selected =
+                preset.bg === bgColor && preset.text === textColor;
+
+              return (
+                <button
+                  key={preset.name}
+                  onClick={() => {
+                    setBgColor(preset.bg);
+                    setTextColor(preset.text);
+                  }}
+                  className={`verse-preset ${selected ? "verse-preset-active" : ""}`}
+                  style={{
+                    backgroundColor: preset.bg,
+                    color: preset.text,
+                  }}
+                >
+                  <span>{preset.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="verse-color-grid">
+            <div>
+              <label className="minimal-label">Background</label>
+              <div className="verse-color-input">
+                <input
+                  type="color"
+                  value={bgColor}
+                  onChange={(event) => setBgColor(event.target.value)}
+                  className="verse-color-swatch"
+                />
+                <input
+                  type="text"
+                  value={bgColor}
+                  onChange={(event) => setBgColor(event.target.value)}
+                  className="minimal-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="minimal-label">Text</label>
+              <div className="verse-color-input">
+                <input
+                  type="color"
+                  value={textColor}
+                  onChange={(event) => setTextColor(event.target.value)}
+                  className="verse-color-swatch"
+                />
+                <input
+                  type="text"
+                  value={textColor}
+                  onChange={(event) => setTextColor(event.target.value)}
+                  className="minimal-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="content-section-heading">
+            <p className="eyebrow">Artwork</p>
+            <h2>Pick a biblical picture theme</h2>
+          </div>
+
+          <div className="verse-theme-grid">
+            {artworkThemes.map((artworkTheme) => (
+              <button
+                key={artworkTheme.id}
+                type="button"
+                onClick={() => setTheme(artworkTheme.id)}
+                className={
+                  theme === artworkTheme.id ? "button-primary" : "button-secondary"
+                }
+              >
+                {artworkTheme.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="content-actions">
+            <button
+              onClick={() => void handleGenerateImage()}
+              disabled={loading}
+              className="button-primary"
+            >
+              {loading ? "Generating..." : "Generate image"}
+            </button>
+            {generatedImage ? (
+              <>
+                <button onClick={downloadImage} className="button-secondary">
+                  Download PNG
+                </button>
+                <button
+                  onClick={() => void quickShareImage()}
+                  className="button-secondary"
+                >
+                  Share image
+                </button>
+                <button
+                  onClick={() => void saveToGallery()}
+                  className="button-secondary"
+                >
+                  Save to gallery
+                </button>
+                <button
+                  onClick={() => void shareToInstagram()}
+                  className="button-secondary button-instagram"
+                >
+                  Instagram
+                </button>
+                <button onClick={shareImagePage} className="button-secondary">
+                  Share page
+                </button>
+              </>
+            ) : null}
+          </div>
 
           {generatedImage ? (
-            <div className="rounded-lg bg-slate-100 p-4">
-              <img
+            <a
+              href={generatedImage}
+              download={`verse-${reference.replace(/\s+/g, "-").toLowerCase()}.png`}
+              className="button-secondary"
+            >
+              Save generated image
+            </a>
+          ) : null}
+
+          {downloaded ? <p className="share-status">Image downloaded.</p> : null}
+          {shareStatus ? <p className="share-status">{shareStatus}</p> : null}
+        </section>
+
+        <section className="content-card verse-studio-panel">
+          <div className="content-section-heading">
+            <p className="eyebrow">Preview</p>
+            <h2>See the final social image</h2>
+          </div>
+
+          {generatedImage ? (
+            <div className="share-image-preview">
+              <Image
                 src={generatedImage}
                 alt="Generated verse"
-                className="w-full rounded-lg shadow-md"
+                className="share-image-preview-media"
+                width={1200}
+                height={630}
+                unoptimized
               />
-              <p className="mt-4 text-center text-sm text-slate-600">
-                1200x630px (perfect for social media)
-              </p>
             </div>
           ) : (
             <div
-              className="flex h-64 items-center justify-center rounded-lg text-slate-400"
-              style={{ backgroundColor: bgColor }}
+              className="verse-studio-placeholder"
+              style={{ backgroundColor: bgColor, color: textColor }}
             >
-              <div className="text-center">
-                <p className="mb-2 text-lg">{verse}</p>
-                <p className="text-sm italic">{reference}</p>
+              <div className="verse-studio-placeholder-inner">
+                <p className="verse-studio-placeholder-verse">
+                  &ldquo;{verse}&rdquo;
+                </p>
+                <p className="verse-studio-placeholder-reference">
+                  {reference}
+                </p>
               </div>
             </div>
           )}
 
-          <div className="mt-6 rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
-            <h3 className="mb-2 font-semibold text-blue-900">Share Tips</h3>
-            <ul className="space-y-1 text-sm text-blue-800">
-              <li>✓ Instagram: 1200x630px recommended</li>
-              <li>✓ Twitter: Works great for thread covers</li>
-              <li>✓ Facebook: Perfect for daily posts</li>
-              <li>✓ Pinterest: Save for collection</li>
-            </ul>
+          <div className="content-card-note">
+            <strong>1200 × 630 px</strong>
+            <p>
+              Sized for social previews, posts, and link cards with a cleaner
+              presentation.
+            </p>
           </div>
-        </div>
-      </div>
+
+          <div className="content-card-note">
+            <strong>Works best for:</strong>
+            <p>
+              Instagram captions, Facebook posts, X shares, and simple ministry
+              graphics.
+            </p>
+          </div>
+
+          <div className="content-card-note">
+            <strong>Artwork mode:</strong>
+            <p>
+              Switch from a minimal verse card to biblical-themed illustrated
+              scenes like desert, shepherd, dove, cross, and mountain.
+            </p>
+          </div>
+        </section>
+      </section>
     </main>
   );
 }

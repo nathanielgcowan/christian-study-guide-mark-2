@@ -1,24 +1,2311 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f5f5f2;
+  --bg-elevated: #ffffff;
+  --bg-muted: #f0efe9;
+  --bg-strong: #111111;
+  --line: #dfddd4;
+  --line-strong: #c8c4b8;
+  --text: #121212;
+  --text-soft: #67645b;
+  --text-faint: #908c82;
+  --accent: #171717;
+  --accent-soft: #eceae2;
+  --success-bg: #edf7ef;
+  --success-text: #1f5a30;
+  --danger-bg: #fff1f1;
+  --danger-text: #8a2f2f;
+  --shadow-sm: 0 8px 24px rgba(15, 15, 15, 0.04);
+  --shadow-md: 0 18px 40px rgba(15, 15, 15, 0.06);
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 14px;
+  --content-width: min(1120px, calc(100% - 2rem));
 }
 
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), transparent 18rem),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.app-body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.42),
+    transparent 24rem
+  );
+}
+
+.site-frame {
+  position: relative;
+  z-index: 1;
+}
+
+.skip-link {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  background: var(--bg-strong);
+  color: white;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: 1rem 0 0;
+}
+
+.site-header-inner,
+.page-shell,
+.site-footer-inner,
+.site-footer-meta,
+.minimal-shell {
+  width: var(--content-width);
+  margin: 0 auto;
+}
+
+.site-header-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(223, 221, 212, 0.8);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.brand-mark-chip {
+  display: grid;
+  place-items: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 999px;
+  background: var(--bg-strong);
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.brand-mark-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.brand-mark-text strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-mark-text small {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+}
+
+.site-nav,
+.site-header-actions,
+.hero-actions,
+.cta-actions,
+.site-footer-nav,
+.minimal-actions,
+.minimal-links,
+.minimal-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.site-nav {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.site-nav a,
+.site-footer-nav a {
+  color: var(--text-soft);
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.site-nav a:hover,
+.site-footer-nav a:hover,
+.minimal-link:hover {
+  color: var(--text);
+}
+
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 2.85rem;
+  padding: 0.78rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.94rem;
+  font-weight: 700;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.button-primary {
+  background: var(--bg-strong);
+  color: white;
+}
+
+.button-secondary {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.button-primary:hover,
+.button-secondary:hover {
+  transform: translateY(-1px);
+}
+
+.button-small {
+  min-height: 2.5rem;
+  padding: 0.65rem 0.95rem;
+}
+
+.page-shell {
+  display: grid;
+  gap: 1rem;
+  padding: 1.35rem 0 3rem;
+}
+
+.hero-panel,
+.section-block,
+.site-footer-inner,
+.site-footer-meta,
+.minimal-card,
+.minimal-hero,
+.minimal-table-wrap {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(16px);
+}
+
+.hero-panel,
+.section-block,
+.minimal-card,
+.minimal-hero,
+.minimal-table-wrap,
+.site-footer-inner,
+.site-footer-meta {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.hero-panel {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 2.5rem;
+  padding: 3rem;
+}
+
+.hero-copy h1,
+.section-heading h2,
+.site-footer-copy h2,
+.cta-panel h2,
+.minimal-hero h1,
+.minimal-card h2,
+.minimal-card h3,
+.minimal-section h2,
+.feature-card h3,
+.pathway-card h3,
+.stat-card strong,
+.stat-tile strong {
+  margin: 0;
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: var(--text);
+}
+
+.hero-copy h1 {
+  max-width: 11ch;
+  font-size: clamp(3.2rem, 6vw, 6rem);
+  line-height: 0.92;
+}
+
+.hero-body,
+.section-heading p,
+.feature-card p,
+.pathway-card p,
+.site-footer-copy p,
+.cta-panel p,
+.hero-stage-card p,
+.minimal-hero p,
+.minimal-note,
+.minimal-empty p,
+.minimal-card p,
+.minimal-table td,
+.minimal-table th {
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.eyebrow,
+.pathway-eyebrow,
+.minimal-label {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hero-actions,
+.cta-actions {
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.hero-rhythms {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-rhythms li {
+  position: relative;
+  padding-left: 1rem;
+  color: var(--text-soft);
+}
+
+.hero-rhythms li::before {
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  left: 0;
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: var(--text);
+}
+
+.hero-stage {
+  display: grid;
+  gap: 1rem;
+  align-content: center;
+}
+
+.hero-stage-card,
+.feature-card,
+.pathway-card,
+.stat-card,
+.closing-note,
+.minimal-item,
+.stat-tile {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.hero-stage-card,
+.feature-card,
+.pathway-card,
+.stat-card,
+.stat-tile {
+  padding: 1.25rem;
+}
+
+.hero-stage-card-primary,
+.hero-stage-card-quote {
+  transform: none;
+}
+
+.stage-label,
+.minimal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.hero-stage-card h2 {
+  margin: 1rem 0 0.55rem;
+  font-size: 1.7rem;
+}
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1.25rem;
+}
+
+.stage-grid div {
+  padding: 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+}
+
+.stage-grid span,
+.hero-stage-card-quote span {
+  display: block;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.stage-grid strong {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.quote {
+  margin: 0.9rem 0;
+  font-size: 1.35rem;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.section-block {
+  padding: 1.6rem;
+}
+
+.section-heading {
+  max-width: 40rem;
+  margin-bottom: 1.2rem;
+}
+
+.section-heading h2,
+.cta-panel h2,
+.site-footer-copy h2,
+.minimal-hero h1,
+.minimal-card h2,
+.minimal-section h2 {
+  font-size: clamp(2rem, 3.3vw, 3.2rem);
+  line-height: 0.96;
+}
+
+.feature-grid,
+.pathway-list,
+.stats-band,
+.minimal-grid,
+.minimal-list,
+.minimal-stat-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.feature-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.feature-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.9rem;
+  background: var(--bg-muted);
+  color: var(--text);
+}
+
+.feature-card h3,
+.pathway-card h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1.3rem;
+}
+
+.pathways {
+  background: rgba(255, 255, 255, 0.74);
+  color: inherit;
+}
+
+.pathways .section-heading p,
+.pathways .pathway-card p,
+.pathways .pathway-eyebrow {
+  color: var(--text-soft);
+}
+
+.pathways .pathway-card {
+  background: var(--bg-elevated);
+  border-color: var(--line);
+}
+
+.pathway-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stats-band {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stat-card strong,
+.stat-tile strong {
+  display: block;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+}
+
+.stat-card span {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.cta-panel {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cta-panel p {
+  max-width: 36rem;
+}
+
+.closing-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem 1.1rem;
+}
+
+.section-block-last {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.site-footer {
+  padding: 0 0 2rem;
+}
+
+.site-footer-inner {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.6rem;
+}
+
+.site-footer-copy {
+  max-width: 34rem;
+}
+
+.site-footer-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.85rem;
+  padding: 1rem 1.2rem;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+.minimal-shell {
+  padding: 1.5rem 0 3rem;
+}
+
+.minimal-hero {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.8rem;
+}
+
+.minimal-hero h1 {
+  max-width: 11ch;
+}
+
+.minimal-card {
+  overflow: hidden;
+}
+
+.minimal-form,
+.minimal-panel,
+.minimal-status {
+  padding: 1.5rem;
+}
+
+.minimal-form-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.minimal-label {
+  display: block;
+  margin-bottom: 0.45rem;
+}
+
+.minimal-input,
+.minimal-textarea,
+.minimal-select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem;
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.minimal-input:focus,
+.minimal-textarea:focus,
+.minimal-select:focus {
+  border-color: var(--text);
+  background: white;
+}
+
+.minimal-textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+}
+
+.minimal-actions {
+  flex-wrap: wrap;
+}
+
+.minimal-links {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.minimal-link {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.minimal-banner {
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem;
+  margin-top: 1rem;
+}
+
+.minimal-banner-error {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.minimal-banner-success {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.minimal-grid-two {
+  grid-template-columns: 1.05fr 0.95fr;
+}
+
+.minimal-meta {
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+  font-size: 0.9rem;
+  color: var(--text-faint);
+}
+
+.minimal-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+}
+
+.minimal-item h3 {
+  margin: 0;
+}
+
+.minimal-empty {
+  padding: 2.4rem 1.4rem;
+  text-align: center;
+}
+
+.minimal-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.minimal-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.minimal-stat-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stat-tile {
+  padding: 1.2rem;
+}
+
+.minimal-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.minimal-table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
+}
+
+.minimal-table th,
+.minimal-table td {
+  padding: 1rem 1.1rem;
+  text-align: left;
+}
+
+.minimal-table th {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.minimal-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--line);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.devotional-shell {
+  width: min(880px, calc(100% - 2rem));
+}
+
+.devotional-hero,
+.devotional-card,
+.devotional-empty,
+.devotional-subscribe {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-sm);
+}
+
+.devotional-hero,
+.devotional-empty,
+.devotional-subscribe {
+  padding: 2rem;
+}
+
+.devotional-hero {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.devotional-hero h1,
+.devotional-card h2,
+.devotional-list-section h2,
+.devotional-subscribe h2,
+.devotional-empty h2 {
+  margin: 0;
+  font-family: var(--font-serif), serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.devotional-hero h1 {
+  max-width: 12ch;
+  font-size: clamp(2.75rem, 5.2vw, 4.75rem);
+  line-height: 0.96;
+}
+
+.devotional-lead,
+.devotional-empty p,
+.devotional-subscribe p,
+.devotional-list-section .section-heading p {
+  max-width: 42rem;
+  color: var(--text-soft);
+  font-size: 1.04rem;
+  line-height: 1.8;
+}
+
+.devotional-toolbar,
+.devotional-toolbar-actions,
+.devotional-subscribe-form,
+.devotional-actions {
+  display: flex;
+  align-items: end;
+  gap: 1rem;
+}
+
+.devotional-toolbar {
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.devotional-picker {
+  width: min(100%, 16rem);
+}
+
+.devotional-toolbar-actions {
+  flex-wrap: wrap;
+}
+
+.devotional-stack,
+.devotional-list-section {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.devotional-card {
+  padding: 2rem;
+}
+
+.devotional-card-featured {
+  border-color: var(--line-strong);
+  background: linear-gradient(
+      180deg,
+      rgba(240, 239, 233, 0.78),
+      rgba(255, 255, 255, 0.92)
+    ),
+    rgba(255, 255, 255, 0.92);
+}
+
+.devotional-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  width: fit-content;
+  margin-bottom: 1rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  background: var(--bg-strong);
+  color: white;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.devotional-card-header {
+  display: grid;
+  gap: 1rem;
+}
+
+.devotional-date {
+  color: var(--text-faint);
+  font-size: 0.92rem;
+}
+
+.devotional-card h2 {
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  line-height: 1.02;
+}
+
+.devotional-verse-block,
+.devotional-prayer,
+.devotional-reflection-list li {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.devotional-verse-block {
+  padding: 1.4rem;
+}
+
+.devotional-loading,
+.devotional-citation {
+  color: var(--text-faint);
+}
+
+.devotional-verse {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-serif), serif;
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  line-height: 1.75;
+}
+
+.devotional-verse-number {
+  margin-right: 0.35rem;
+  color: var(--text-faint);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.devotional-citation {
+  display: block;
+  margin-top: 1rem;
+  text-align: right;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.devotional-share {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.devotional-content {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.75rem;
+}
+
+.devotional-section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.devotional-section h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.devotional-prose {
+  max-width: 65ch;
+  color: var(--text);
+}
+
+.devotional-prose p {
+  margin: 0;
+  font-family: var(--font-serif), serif;
+  font-size: 1.12rem;
+  line-height: 1.95;
+}
+
+.devotional-prose p + p {
+  margin-top: 1.1rem;
+}
+
+.devotional-reflection-list {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.devotional-reflection-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.devotional-reflection-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.devotional-prayer {
+  max-width: 62ch;
+  padding: 1.2rem 1.25rem;
+  color: var(--text);
+  font-family: var(--font-serif), serif;
+  font-size: 1.08rem;
+  line-height: 1.9;
+  font-style: italic;
+}
+
+.devotional-actions {
+  justify-content: flex-start;
+  margin-top: 1.5rem;
+}
+
+.devotional-empty,
+.devotional-subscribe {
+  display: grid;
+  gap: 1rem;
+}
+
+.devotional-empty {
+  justify-items: start;
+}
+
+.devotional-empty-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.devotional-subscribe {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+.devotional-subscribe-form {
+  width: min(100%, 24rem);
+  align-items: center;
+}
+
+.devotional-subscribe-form .minimal-input {
+  min-width: 15rem;
+}
+
+.content-shell {
+  width: min(1040px, calc(100% - 2rem));
+}
+
+.content-shell-narrow {
+  width: min(860px, calc(100% - 2rem));
+}
+
+.content-hero,
+.content-card,
+.content-section-card,
+.article-card,
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-sm);
+}
+
+.content-hero,
+.content-card,
+.content-section-card,
+.article-card {
+  padding: 1.8rem;
+}
+
+.content-hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.content-hero h1,
+.content-section-heading h2,
+.content-card h2,
+.content-card h3,
+.article-card h1,
+.article-card h2,
+.article-card h3,
+.faq-item summary {
+  margin: 0;
+  color: var(--text);
+}
+
+.content-hero h1,
+.article-card h1,
+.content-section-heading h2 {
+  font-family: var(--font-serif), serif;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.content-hero h1 {
+  max-width: 13ch;
+  font-size: clamp(2.9rem, 5vw, 4.9rem);
+  line-height: 0.96;
+}
+
+.content-lead,
+.content-section-heading p,
+.content-card p,
+.article-meta,
+.article-intro {
+  color: var(--text-soft);
+  line-height: 1.8;
+}
+
+.content-toolbar,
+.content-actions,
+.content-chip-row,
+.article-header-row,
+.article-share {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.content-toolbar {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.content-chip-row {
+  flex-wrap: wrap;
+}
+
+.content-chip,
+.content-badge,
+.article-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.content-grid,
+.content-grid-two,
+.content-grid-three,
+.content-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.content-grid-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.content-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.content-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.content-card h3,
+.content-card h2 {
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  line-height: 1.12;
+}
+
+.content-card-title {
+  font-family: var(--font-serif), serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.content-card-meta {
+  color: var(--text-faint);
+  font-size: 0.92rem;
+}
+
+.content-card-note {
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.content-stat {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.content-stat strong {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  letter-spacing: -0.05em;
+}
+
+.content-section-heading {
+  display: grid;
+  gap: 0.7rem;
+  max-width: 44rem;
+}
+
+.article-shell {
+  width: min(860px, calc(100% - 2rem));
+}
+
+.article-card {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.article-back {
+  width: fit-content;
+}
+
+.article-header-row {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.article-meta {
+  font-size: 0.95rem;
+}
+
+.reader-prose {
+  max-width: 65ch;
+  color: var(--text);
+}
+
+.reader-prose h1:first-child {
+  display: none;
+}
+
+.reader-prose h2,
+.reader-prose h3 {
+  font-family: var(--font-serif), serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.reader-prose h2 {
+  margin: 2rem 0 0.75rem;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+}
+
+.reader-prose h3 {
+  margin: 1.4rem 0 0.6rem;
+  font-size: 1.25rem;
+}
+
+.reader-prose p,
+.reader-prose li {
+  font-family: var(--font-serif), serif;
+  font-size: 1.1rem;
+  line-height: 1.95;
+}
+
+.reader-prose p,
+.reader-prose ul,
+.reader-prose ol,
+.reader-prose blockquote {
+  margin: 0;
+}
+
+.reader-prose p + p,
+.reader-prose ul + p,
+.reader-prose ol + p,
+.reader-prose p + ul,
+.reader-prose p + ol,
+.reader-prose blockquote + p {
+  margin-top: 1rem;
+}
+
+.reader-prose ul,
+.reader-prose ol {
+  padding-left: 1.2rem;
+}
+
+.reader-prose li + li {
+  margin-top: 0.55rem;
+}
+
+.reader-prose blockquote {
+  padding: 1.1rem 1.2rem;
+  border-left: 3px solid var(--line-strong);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--bg-muted);
+}
+
+.faq-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.faq-item {
+  padding: 1rem 1.15rem;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item p {
+  margin: 0.8rem 0 0;
+  color: var(--text-soft);
+  line-height: 1.75;
+}
+
+.social-share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.social-share-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.45rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.social-share-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  background: white;
+  color: var(--text);
+}
+
+.social-share-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  color: var(--text);
+}
+
+.share-image-preview {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-muted);
+}
+
+.share-image-preview-media {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.button-instagram {
+  border-color: color-mix(in srgb, #c13584 35%, var(--line));
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.16), rgba(225, 48, 108, 0.18)),
+    var(--surface);
+  color: var(--text);
+}
+
+.button-instagram:hover {
+  border-color: color-mix(in srgb, #e1306c 42%, var(--line));
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(225, 48, 108, 0.24)),
+    var(--surface);
+}
+
+.share-status {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.content-card-note code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.verse-studio-shell {
+  gap: 1.25rem;
+}
+
+.verse-studio-hero h1 {
+  max-width: 11ch;
+}
+
+.verse-studio-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.95fr;
+  gap: 1rem;
+}
+
+.not-found-shell {
+  gap: 1.25rem;
+}
+
+.not-found-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.not-found-copy,
+.not-found-stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius-lg) + 0.5rem);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.74)),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.not-found-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+.not-found-copy h1 {
+  max-width: 11ch;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 5vw, 4.8rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+}
+
+.not-found-lead {
+  max-width: 36rem;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.not-found-backlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-soft);
+  text-decoration: none;
+}
+
+.not-found-backlink:hover {
+  color: var(--text);
+}
+
+.not-found-stage {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  isolation: isolate;
+  background:
+    radial-gradient(circle at top left, rgba(184, 153, 106, 0.22), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(34, 56, 52, 0.18), transparent 40%),
+    linear-gradient(180deg, rgba(247, 244, 238, 0.96), rgba(240, 235, 227, 0.88));
+}
+
+.not-found-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(8px);
+  opacity: 0.8;
+  z-index: -1;
+}
+
+.not-found-orb-large {
+  top: 14%;
+  right: 14%;
+  width: 9rem;
+  height: 9rem;
+  background: rgba(163, 127, 77, 0.24);
+}
+
+.not-found-orb-small {
+  bottom: 16%;
+  left: 10%;
+  width: 5.75rem;
+  height: 5.75rem;
+  background: rgba(31, 57, 52, 0.2);
+}
+
+.not-found-card {
+  max-width: 18rem;
+  padding: 1.4rem;
+  border: 1px solid rgba(31, 37, 33, 0.12);
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 22px 50px rgba(28, 34, 31, 0.12);
+}
+
+.not-found-card span {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.not-found-card strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.not-found-card p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.not-found-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.not-found-card-link {
+  gap: 1rem;
+}
+
+.verse-studio-panel {
+  align-content: start;
+}
+
+.saved-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.saved-gallery-card {
+  gap: 1rem;
+}
+
+.saved-gallery-frame {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-muted);
+}
+
+.saved-gallery-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bible-reader-hero h1 {
+  max-width: 11ch;
+}
+
+.bible-reader-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+}
+
+.bible-reader-selects {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.bible-reader-actions {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.bible-reader-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.bible-reader-panel,
+.bible-reader-sidebar {
+  display: grid;
+  gap: 1rem;
+}
+
+.bible-reader-verses {
+  display: grid;
+  gap: 1rem;
+}
+
+.bible-reader-verse {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.9;
+}
+
+.bible-reader-verse span {
+  display: inline-flex;
+  min-width: 2rem;
+  margin-right: 0.5rem;
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.site-map-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.site-map-card {
+  gap: 1rem;
+}
+
+.site-map-card code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.prayer-journal-hero h1 {
+  max-width: 12ch;
+}
+
+.prayer-journal-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.prayer-journal-stat,
+.prayer-journal-card {
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius-lg) + 0.25rem);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.76)),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.prayer-journal-stat {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.45rem;
+}
+
+.prayer-journal-stat strong {
+  color: var(--text);
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  line-height: 1;
+}
+
+.prayer-journal-stat span {
+  color: var(--text-soft);
+}
+
+.prayer-journal-stat-answered strong {
+  color: #2b6b45;
+}
+
+.prayer-journal-stat-waiting strong {
+  color: #8f5a17;
+}
+
+.prayer-journal-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.25fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.prayer-journal-stack,
+.prayer-journal-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.prayer-journal-form {
+  padding: 1.4rem;
+}
+
+.prayer-journal-form h3,
+.prayer-entry-card h4,
+.prayer-journal-empty h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.prayer-journal-textarea {
+  min-height: 11rem;
+}
+
+.prayer-journal-toolbar {
+  padding: 1.1rem;
+}
+
+.prayer-journal-toolbar-row {
+  display: grid;
+  gap: 1rem;
+}
+
+.prayer-journal-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.prayer-journal-filter {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(250, 248, 243, 0.92);
+  color: var(--text-soft);
+  font-weight: 600;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.prayer-journal-filter:hover {
+  transform: translateY(-1px);
+  color: var(--text);
+}
+
+.prayer-journal-filter-active {
+  border-color: rgba(33, 48, 43, 0.18);
+  background: linear-gradient(135deg, rgba(31, 57, 52, 0.94), rgba(74, 92, 78, 0.94));
+  color: #f6f2e9;
+}
+
+.prayer-journal-search {
+  max-width: 24rem;
+}
+
+.prayer-entry-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.3rem;
+}
+
+.prayer-entry-card-answered {
+  border-color: rgba(71, 116, 81, 0.18);
+  background:
+    linear-gradient(180deg, rgba(246, 250, 246, 0.95), rgba(240, 247, 241, 0.88)),
+    var(--surface);
+}
+
+.prayer-entry-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.prayer-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}
+
+.prayer-entry-meta span {
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(247, 244, 238, 0.95);
+}
+
+.prayer-entry-answered {
+  color: #2b6b45;
+  background: rgba(228, 242, 231, 0.92) !important;
+}
+
+.prayer-entry-content {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.prayer-journal-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.8rem;
+  padding: 2.75rem 1.4rem;
+  text-align: center;
+}
+
+.prayer-journal-empty-mark {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1;
+  color: rgba(31, 57, 52, 0.8);
+}
+
+.prayer-journal-empty p {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.verse-studio-textarea {
+  min-height: 10rem;
+}
+
+.verse-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.verse-preset {
+  min-height: 4.5rem;
+  padding: 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  text-align: left;
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.verse-preset:hover {
+  transform: translateY(-1px);
+}
+
+.verse-preset-active {
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.verse-color-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.verse-theme-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.verse-color-input {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+}
+
+.verse-color-swatch {
+  width: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: none;
+  cursor: pointer;
+}
+
+.verse-studio-placeholder {
+  display: grid;
+  min-height: 28rem;
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.verse-studio-placeholder-inner {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.verse-studio-placeholder-verse,
+.verse-studio-placeholder-reference {
+  margin: 0;
+  max-width: 18ch;
+}
+
+.verse-studio-placeholder-verse {
+  font-family: var(--font-serif), serif;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1.35;
+}
+
+.verse-studio-placeholder-reference {
+  margin-top: 1rem;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.86;
+}
+
+@media (max-width: 1024px) {
+  .hero-panel,
+  .feature-grid,
+  .pathway-list,
+  .stats-band,
+  .minimal-grid-two,
+  .minimal-stat-grid,
+  .site-header-inner,
+  .site-footer-inner,
+  .cta-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .site-header-inner,
+  .site-footer-inner,
+  .cta-panel {
+    display: grid;
+  }
+
+  .hero-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pathway-list,
+  .stats-band {
+    grid-template-columns: 1fr;
+  }
+
+  .site-header-inner {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .site-nav,
+  .site-header-actions {
+    width: 100%;
+  }
+
+  .devotional-subscribe {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .content-grid-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .verse-studio-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bible-reader-controls,
+  .bible-reader-layout,
+  .bible-reader-selects,
+  .site-map-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prayer-journal-stats,
+  .prayer-journal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .not-found-panel,
+  .not-found-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --content-width: min(1120px, calc(100% - 1rem));
+  }
+
+  .devotional-shell {
+    width: min(880px, calc(100% - 1rem));
+  }
+
+  .content-shell,
+  .content-shell-narrow,
+  .article-shell {
+    width: min(1040px, calc(100% - 1rem));
+  }
+
+  .social-share {
+    width: 100%;
+  }
+
+  .share-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .not-found-actions {
+    width: 100%;
+  }
+
+  .verse-preset-grid,
+  .verse-color-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .verse-theme-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .verse-studio-placeholder {
+    min-height: 20rem;
+    padding: 1.4rem;
+  }
+
+  .site-header {
+    padding-top: 0.75rem;
+  }
+
+  .site-nav,
+  .site-header-actions,
+  .hero-actions,
+  .cta-actions,
+  .site-footer-nav,
+  .site-footer-meta,
+  .minimal-actions,
+  .minimal-links,
+  .minimal-meta {
+    flex-wrap: wrap;
+  }
+
+  .site-header-inner {
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 1.5rem;
+  }
+
+  .brand-mark {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .brand-mark-chip {
+    flex-shrink: 0;
+  }
+
+  .site-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    justify-content: stretch;
+  }
+
+  .site-nav a,
+  .site-footer-nav a {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    text-align: center;
+  }
+
+  .site-header-actions,
+  .hero-actions,
+  .cta-actions,
+  .minimal-actions,
+  .minimal-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .site-header-actions > *,
+  .hero-actions > *,
+  .cta-actions > *,
+  .minimal-actions > *,
+  .minimal-links > *,
+  .not-found-actions > *,
+  .devotional-toolbar-actions > *,
+  .devotional-subscribe-form > * {
+    width: 100%;
+  }
+
+  .button-primary,
+  .button-secondary {
+    width: 100%;
+  }
+
+  .hero-panel,
+  .section-block,
+  .minimal-hero,
+  .minimal-form,
+  .minimal-panel,
+  .minimal-status,
+  .site-footer-inner,
+  .site-footer-meta,
+  .devotional-hero,
+  .devotional-card,
+  .devotional-empty,
+  .devotional-subscribe {
+    padding: 1.2rem;
+  }
+
+  .hero-copy h1,
+  .minimal-hero h1,
+  .not-found-copy h1 {
+    max-width: none;
+  }
+
+  .hero-panel {
+    gap: 1.5rem;
+  }
+
+  .hero-rhythms {
+    margin-top: 1.25rem;
+  }
+
+  .feature-grid,
+  .stage-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .devotional-toolbar,
+  .devotional-toolbar-actions,
+  .devotional-subscribe-form,
+  .devotional-actions,
+  .devotional-share,
+  .content-toolbar,
+  .content-actions,
+  .article-header-row,
+  .article-share {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .devotional-picker,
+  .devotional-subscribe-form {
+    width: 100%;
+  }
+
+  .devotional-verse {
+    font-size: 1.08rem;
+    line-height: 1.7;
+  }
+
+  .devotional-prose p,
+  .devotional-prayer,
+  .reader-prose p,
+  .reader-prose li {
+    font-size: 1.02rem;
+    line-height: 1.82;
+  }
+
+  .content-grid-two,
+  .content-grid-three,
+  .saved-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prayer-entry-header {
+    display: grid;
+  }
+
+  .prayer-journal-search {
+    max-width: none;
+  }
+
+  .minimal-item,
+  .minimal-section-heading,
+  .site-footer-inner,
+  .site-footer-meta,
+  .closing-note {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .minimal-item > *:last-child,
+  .minimal-section-heading > *:last-child {
+    width: 100%;
+  }
+
+  .minimal-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .minimal-table {
+    min-width: 34rem;
+  }
+
+  .minimal-table th,
+  .minimal-table td {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .site-footer-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .site-footer-meta {
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero-copy h1,
+  .minimal-hero h1,
+  .section-heading h2,
+  .cta-panel h2,
+  .site-footer-copy h2,
+  .minimal-card h2,
+  .minimal-section h2 {
+    line-height: 1;
+  }
+
+  .site-nav,
+  .site-footer-nav,
+  .minimal-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .devotional-hero h1,
+  .devotional-card h2 {
+    line-height: 1.04;
+  }
+
+  .content-hero h1,
+  .content-section-heading h2,
+  .article-card h1 {
+    line-height: 1.02;
+  }
+
+  .social-share-link {
+    justify-content: center;
+    flex: 1 1 100%;
+  }
+
+  .stage-grid {
+    gap: 0.65rem;
+  }
+
+  .minimal-table {
+    min-width: 30rem;
+  }
 }

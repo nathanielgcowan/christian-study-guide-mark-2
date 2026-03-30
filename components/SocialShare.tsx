@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import { Globe, BriefcaseBusiness, MessageCircle, Send } from "lucide-react";
 
 const getShareUrl = (platform: string, url: string, text: string) => {
   switch (platform) {
@@ -7,7 +9,7 @@ const getShareUrl = (platform: string, url: string, text: string) => {
     case "twitter":
       return `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
     case "whatsapp":
-      return `https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`;
+      return `https://api.whatsapp.com/send?text=${encodeURIComponent(`${text} ${url}`)}`;
     case "linkedin":
       return `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
     default:
@@ -20,55 +22,51 @@ interface SocialShareProps {
   text?: string;
 }
 
-const SocialShare: React.FC<SocialShareProps> = ({ url, text }) => {
+const platforms = [
+  {
+    id: "facebook",
+    label: "Facebook",
+    Icon: Globe,
+  },
+  {
+    id: "twitter",
+    label: "X",
+    Icon: Send,
+  },
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    Icon: MessageCircle,
+  },
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    Icon: BriefcaseBusiness,
+  },
+] as const;
+
+export default function SocialShare({ url, text }: SocialShareProps) {
   const shareUrl =
     url || (typeof window !== "undefined" ? window.location.href : "");
   const shareText = text || "Check this out!";
 
   return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <a
-        href={getShareUrl("facebook", shareUrl, shareText)}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Share on Facebook"
-      >
-        <span role="img" aria-label="Facebook">
-          📘
-        </span>
-      </a>
-      <a
-        href={getShareUrl("twitter", shareUrl, shareText)}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Share on Twitter"
-      >
-        <span role="img" aria-label="Twitter">
-          🐦
-        </span>
-      </a>
-      <a
-        href={getShareUrl("whatsapp", shareUrl, shareText)}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Share on WhatsApp"
-      >
-        <span role="img" aria-label="WhatsApp">
-          💬
-        </span>
-      </a>
-      <a
-        href={getShareUrl("linkedin", shareUrl, shareText)}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Share on LinkedIn"
-      >
-        <span role="img" aria-label="LinkedIn">
-          💼
-        </span>
-      </a>
+    <div className="social-share" aria-label="Share this page">
+      {platforms.map(({ id, label, Icon }) => (
+        <a
+          key={id}
+          href={getShareUrl(id, shareUrl, shareText)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Share on ${label}`}
+          className="social-share-link"
+        >
+          <span className="social-share-icon" aria-hidden="true">
+            <Icon size={15} strokeWidth={2} />
+          </span>
+          <span>{label}</span>
+        </a>
+      ))}
     </div>
   );
-};
-
-export default SocialShare;
+}

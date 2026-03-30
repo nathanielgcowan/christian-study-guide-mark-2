@@ -20,7 +20,7 @@ export default function BibleTranslations() {
         setTranslations(data.translations || []);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(() => {
         setError("Failed to load translations");
         setLoading(false);
       });

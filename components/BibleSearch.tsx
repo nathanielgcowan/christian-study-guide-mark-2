@@ -25,10 +25,10 @@ export default function BibleSearch() {
         body: JSON.stringify({ query }),
       });
       if (!res.ok) throw new Error("Search failed");
-      const data = await res.json();
+      const data = (await res.json()) as { results?: BibleVerse[] };
       setResults(data.results || []);
-    } catch (err: any) {
-      setError(err.message || "Unknown error");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);
     }

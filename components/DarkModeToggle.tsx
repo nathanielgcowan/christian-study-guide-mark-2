@@ -2,22 +2,23 @@
 import { useEffect, useState } from "react";
 
 export default function DarkModeToggle() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const saved = localStorage.getItem("theme");
+    return saved === "dark" || (!saved && systemDark);
+  });
 
   useEffect(() => {
-    // On mount, check system preference or localStorage
-    const systemDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark" || (!saved && systemDark)) {
+    if (isDark) {
       document.documentElement.classList.add("dark");
-      setIsDark(true);
     } else {
       document.documentElement.classList.remove("dark");
-      setIsDark(false);
     }
-  }, []);
+  }, [isDark]);
 
   const toggle = () => {
     setIsDark((prev) => {

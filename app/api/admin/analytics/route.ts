@@ -1,55 +1,117 @@
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getCurrentUser, getUserProfile } from "@/lib/auth-server";
 
-export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
+type ActivityRow = {
+  user_id: string;
+  event_type: string;
+  created_at: string;
+};
 
-  if (!session || session.user?.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+type ProfileRow = {
+  id: string;
+  email: string;
+};
+
+function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Missing Supabase admin environment variables");
   }
 
-  const events = await prisma.analyticsEvent.findMany({
-    include: { user: { select: { email: true } } },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
+  return createSupabaseClient(supabaseUrl, serviceRoleKey);
+}
 
-  const metricsByUser = events.reduce<
-    Record<
-      string,
-      { lastActive: string; sessions: number; prayers: number; pages: number }
-    >
-  >((acc, event) => {
-    const email = event.user.email;
-    const existing = acc[email] || {
-      lastActive: "",
-      sessions: 0,
-      prayers: 0,
-      pages: 0,
-    };
-
-    if (event.createdAt.toISOString() > existing.lastActive) {
-      existing.lastActive = event.createdAt.toISOString();
+export async function GET() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (event.type === "session") existing.sessions += 1;
-    if (event.type === "prayer") existing.prayers += 1;
-    if (event.type === "page") existing.pages += 1;
+    const profile = await getUserProfile();
+    if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
-    acc[email] = existing;
-    return acc;
-  }, {});
+    const supabase = createAdminClient();
+    const [{ data: profiles, error: profilesError }, { data: activity, error: activityError }] =
+      await Promise.all([
+        supabase.from("user_profiles").select("id,email"),
+        supabase
+          .from("user_activity")
+          .select("user_id,event_type,created_at")
+          .order("created_at", { ascending: false })
+          .limit(2000),
+      ]);
 
-  const metrics = Object.entries(metricsByUser).map(([email, data], idx) => ({
-    id: idx + 1,
-    email,
-    lastActive: data.lastActive,
-    sessions: data.sessions,
-    prayersLogged: data.prayers,
-    pagesVisited: data.pages,
-  }));
+    if (profilesError) {
+      return NextResponse.json({ error: profilesError.message }, { status: 400 });
+    }
 
-  return NextResponse.json({ metrics });
+    if (activityError) {
+      return NextResponse.json({ error: activityError.message }, { status: 400 });
+    }
+
+    const profileMap = new Map(
+      ((profiles ?? []) as ProfileRow[]).map((item) => [item.id, item.email]),
+    );
+
+    const metricsByUser = ((activity ?? []) as ActivityRow[]).reduce<
+      Record<
+        string,
+        { email: string; lastActive: string; sessions: number; prayersLogged: number; pagesVisited: number }
+      >
+    >((acc, item) => {
+      const email = profileMap.get(item.user_id);
+      if (!email) {
+        return acc;
+      }
+
+      const existing = acc[item.user_id] ?? {
+        email,
+        lastActive: item.created_at,
+        sessions: 0,
+        prayersLogged: 0,
+        pagesVisited: 0,
+      };
+
+      if (item.created_at > existing.lastActive) {
+        existing.lastActive = item.created_at;
+      }
+
+      if (
+        item.event_type.includes("study") ||
+        item.event_type.includes("session")
+      ) {
+        existing.sessions += 1;
+      }
+
+      if (item.event_type.includes("prayer")) {
+        existing.prayersLogged += 1;
+      }
+
+      existing.pagesVisited += 1;
+      acc[item.user_id] = existing;
+      return acc;
+    }, {});
+
+    const metrics = Object.values(metricsByUser).map((item, index) => ({
+      id: index + 1,
+      email: item.email,
+      lastActive: item.lastActive,
+      sessions: item.sessions,
+      prayersLogged: item.prayersLogged,
+      pagesVisited: item.pagesVisited,
+    }));
+
+    return NextResponse.json({ metrics });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

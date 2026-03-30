@@ -1,23 +1,59 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { LogOut, Mail, UserRound } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+
+interface ProfileResponse {
+  name: string | null;
+  email: string;
+  bio: string | null;
+}
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [bio, setBio] = useState("");
   const [name, setName] = useState("");
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (session?.user?.name) setName(session.user.name);
-  }, [session]);
+    async function loadProfile() {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setLoading(false);
+        return;
+      }
+
+      setUser(session.user);
+
+      const response = await fetch("/api/user/profile");
+      if (response.ok) {
+        const profile = (await response.json()) as ProfileResponse;
+        setName(profile.name ?? "");
+        setBio(profile.bio ?? "");
+      } else {
+        setName(session.user.user_metadata?.full_name ?? "");
+      }
+
+      setLoading(false);
+    }
+
+    void loadProfile();
+  }, []);
 
   async function handleUpdate() {
     setSaving(true);
     const response = await fetch("/api/user/profile", {
-      method: "POST",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, bio }),
     });
@@ -30,63 +66,93 @@ export default function ProfilePage() {
     }
   }
 
-  if (status === "loading") return <p>Loading...</p>;
-  if (status === "unauthenticated")
-    return <p>Please sign in to view your profile.</p>;
+  if (loading) return <p>Loading...</p>;
 
-  return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <div className="mb-6">
-        <Link href="/" className="text-blue-600 hover:underline">
-          ← Back home
-        </Link>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-lg">
-        <h1 className="mb-6 text-3xl font-bold">Your Profile</h1>
-
-        <div className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Bio
-            </label>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              rows={4}
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <button
-              onClick={handleUpdate}
-              disabled={saving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save Profile"}
-            </button>
-            <Link
-              href="/user/settings"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-100"
-            >
-              Email Preferences
+  if (!user) {
+    return (
+      <main className="minimal-shell">
+        <section className="minimal-card minimal-status">
+          <h2>Please sign in to view your profile.</h2>
+          <div className="minimal-actions">
+            <Link href="/auth/signin" className="button-primary">
+              Sign in
             </Link>
           </div>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="minimal-shell">
+      <section className="minimal-grid minimal-grid-two">
+        <div className="minimal-hero">
+          <p className="eyebrow">Profile</p>
+          <h1>Your account, simplified.</h1>
+          <p>
+            Keep only the details that matter close at hand, with less visual
+            noise and more room to focus on study.
+          </p>
+          <div className="minimal-actions">
+            <span className="minimal-badge">
+              <UserRound size={14} />
+              {name || "Member"}
+            </span>
+            <span className="minimal-badge">
+              <Mail size={14} />
+              {user.email}
+            </span>
+          </div>
         </div>
-      </div>
+
+        <div className="minimal-card minimal-form">
+          <h2>Edit details</h2>
+          <div className="minimal-form-grid">
+            <div>
+              <label className="minimal-label">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="minimal-input"
+              />
+            </div>
+
+            <div>
+              <label className="minimal-label">Bio</label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="minimal-textarea"
+                rows={4}
+              />
+            </div>
+
+            <div className="minimal-actions">
+              <button
+                onClick={handleUpdate}
+                disabled={saving}
+                className="button-primary"
+              >
+                {saving ? "Saving..." : "Save profile"}
+              </button>
+              <Link href="/user/settings" className="button-secondary">
+                Preferences
+              </Link>
+              <button
+                onClick={() => {
+                  const supabase = createClient();
+                  void supabase.auth.signOut().then(() => router.push("/"));
+                }}
+                className="button-secondary"
+              >
+                <LogOut size={16} />
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

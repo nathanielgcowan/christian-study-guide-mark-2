@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { generateVerseImage } from "@/lib/verse-image";
+import { generateVerseImage, normalizeVerseArtworkTheme } from "@/lib/verse-image";
 
 export async function POST(request: Request) {
   try {
-    const { verse, reference, backgroundColor, textColor } =
+    const { verse, reference, backgroundColor, textColor, theme } =
       await request.json();
 
     if (!verse || !reference) {
@@ -18,6 +18,7 @@ export async function POST(request: Request) {
       reference,
       backgroundColor: backgroundColor || "#1f2937",
       textColor: textColor || "#ffffff",
+      theme: normalizeVerseArtworkTheme(theme),
       width: 1200,
       height: 630,
     });

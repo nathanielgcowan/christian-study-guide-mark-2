@@ -1,25 +1,5 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 
-const ADMIN_PATHS = ["/admin", "/api/admin"];
-
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (ADMIN_PATHS.some((path) => pathname.startsWith(path))) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
-    if (!token || token.role !== "admin") {
-      return NextResponse.redirect(new URL("/auth/signin", request.url));
-    }
-  }
-
+export function middleware() {
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
-};

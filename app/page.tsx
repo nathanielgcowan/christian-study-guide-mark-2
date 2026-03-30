@@ -1,434 +1,297 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
+import {
+  ArrowRight,
+  BookHeart,
+  BookOpenText,
+  BellRing,
+  Compass,
+  Flame,
+  Layers3,
+  NotebookPen,
+  Sparkles,
+  UsersRound,
+  WandSparkles,
+  ShieldCheck,
+} from "lucide-react";
 
-import dynamic from "next/dynamic";
-const DarkModeToggle = dynamic(() => import("../components/DarkModeToggle"), {
-  ssr: false,
-});
-const FunFact = dynamic(() => import("../components/FunFact"), { ssr: false });
-
-function Header() {
-  return (
-    <header className="border-b border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700">
-      <div className="mx-auto max-w-6xl px-6 py-4">
-        <nav className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-xl font-bold text-slate-900 dark:text-white"
-          >
-            Christian Study Guide
-          </Link>
-          <div className="flex items-center gap-4 md:gap-6">
-            <Link
-              href="/"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Home
-            </Link>
-            <Link
-              href="/blog"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/reading-plans"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Reading Plans
-            </Link>
-            <Link
-              href="/prayer-journal"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Prayer Journal
-            </Link>
-            <Link
-              href="/devotionals"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Devotionals
-            </Link>
-            <Link
-              href="/scripture-memory"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Memory
-            </Link>
-            <Link
-              href="/resources"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Resources
-            </Link>
-            <Link
-              href="/auth/register"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Register
-            </Link>
-            <Link
-              href="/user/profile"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              My Profile
-            </Link>
-            <Link
-              href="/user/bookmarks"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              My Bookmarks
-            </Link>
-            <Link
-              href="/user/prayer-requests"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Prayer Requests
-            </Link>
-            <Link
-              href="/user/verse-generator"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Share Verse
-            </Link>
-            <Link
-              href="/admin/analytics"
-              className="text-slate-600 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white transition"
-            >
-              Admin Analytics
-            </Link>
-            <DarkModeToggle />
-          </div>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
-const verses = [
+const featureCards = [
   {
-    text: "Your word is a lamp to my feet and a light to my path.",
-    reference: "Psalm 119:105",
+    title: "Scripture-first reading",
+    description:
+      "Move from a daily passage into context, cross references, and reflection prompts without leaving the flow of study.",
+    icon: BookOpenText,
   },
   {
-    text: "Trust in the Lord with all your heart and do not lean on your own understanding.",
-    reference: "Proverbs 3:5",
+    title: "Guided spiritual rhythms",
+    description:
+      "Blend reading plans, prayer habits, memorization, and devotionals into a weekly pattern that feels sustainable.",
+    icon: Compass,
   },
   {
-    text: "I can do all things through Christ who strengthens me.",
-    reference: "Philippians 4:13",
+    title: "Personal study workspace",
+    description:
+      "Keep prayer notes, saved verses, bookmarks, and insights close so growth does not disappear between sessions.",
+    icon: NotebookPen,
+  },
+  {
+    title: "Built for depth",
+    description:
+      "Browse theology, apologetics, maps, topical studies, and practical resources from one calm study environment.",
+    icon: Layers3,
   },
 ];
 
-function HeroSection({
-  currentVerse,
-  nextVerse,
-}: {
-  currentVerse: { text: string; reference: string };
-  nextVerse: () => void;
-}) {
+const rhythms = [
+  "Start with a daily reading path and verse comparison.",
+  "Capture prayer requests, insights, and memory verses in one place.",
+  "Explore deeper context with topical studies, maps, and devotionals.",
+];
+
+const pathways = [
+  {
+    eyebrow: "For daily consistency",
+    title: "A home base for Scripture, prayer, and reflection",
+    copy:
+      "The homepage now acts like a study desk instead of a link directory. Clear entry points help readers know where to begin, what to do next, and how to stay anchored in the Word.",
+  },
+  {
+    eyebrow: "For deeper learning",
+    title: "Tools that support growth without overwhelming the page",
+    copy:
+      "Sections are grouped around real study goals: understand the passage, build a rhythm, and revisit what matters. The design leaves room to breathe while still surfacing a broad set of tools.",
+  },
+  {
+    eyebrow: "For return visits",
+    title: "A brand that feels thoughtful instead of generic",
+    copy:
+      "Warm tones, editorial typography, layered surfaces, and gentle motion give the site a distinct identity that feels more like a crafted ministry product than a starter template.",
+  },
+];
+
+const stats = [
+  { value: "40+", label: "entry points for study, prayer, reading, and discovery" },
+  { value: "1", label: "shared design language across the landing experience" },
+  { value: "100%", label: "mobile-friendly rebuild with accessible contrast and spacing" },
+];
+
+const expansionCards = [
+  {
+    title: "Personal onboarding",
+    description:
+      "Set your translation, focus goal, reminder flow, and dashboard defaults in one guided setup.",
+    href: "/onboarding",
+    icon: WandSparkles,
+  },
+  {
+    title: "Groups and prayer circles",
+    description:
+      "Move from solo study into shared reading, prayer follow-up, and calmer community spaces.",
+    href: "/groups",
+    icon: UsersRound,
+  },
+  {
+    title: "Reminder flow",
+    description:
+      "Control devotional, prayer, and newsletter reminders without turning the app into inbox noise.",
+    href: "/notifications",
+    icon: BellRing,
+  },
+  {
+    title: "Passage study workspace",
+    description:
+      "Open a reference with comparison, notes, bookmarks, and related passages in one place.",
+    href: "/passage/John%203%3A16",
+    icon: BookOpenText,
+  },
+  {
+    title: "Admin content hub",
+    description:
+      "Manage publishing state and featured content with the first real CMS-style admin surface.",
+    href: "/admin/content",
+    icon: ShieldCheck,
+  },
+];
+
+export default function Home() {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
-      <div className="grid items-center gap-10 md:grid-cols-2">
-        <div>
-          <p className="mb-3 inline-block rounded-full bg-blue-100 px-4 py-1 text-sm font-medium text-blue-700">
-            Christian Study Guide
-          </p>
-          <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-6xl text-white">
-            Grow in God’s Word with a simple Christian study website
+    <main id="main-content" className="page-shell">
+      <section className="hero-panel">
+        <div className="hero-copy">
+          <p className="eyebrow">Rebuilt for a deeper walk through Scripture</p>
+          <h1>
+            A Christian study website that feels calm, intentional, and ready
+            to use every day.
           </h1>
-          <p className="mb-6 max-w-xl text-lg text-slate-600">
-            Read Scripture, explore study topics, reflect on verses, and keep
-            track of your prayer life in one clean place.
+          <p className="hero-body">
+            Read the Bible, follow structured rhythms, capture prayers, and
+            explore richer context in a single study environment designed to
+            keep attention on God&apos;s Word.
           </p>
-          <div className="flex flex-wrap gap-4">
-            <button className="rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-blue-700">
-              Start Studying
-            </button>
-            <button className="rounded-2xl border border-slate-300 bg-white px-6 py-3 font-semibold text-slate-800 transition hover:bg-slate-100">
-              View Topics
-            </button>
+          <div className="hero-actions">
+            <Link href="/reading-plans" className="button-primary">
+              Begin a reading path
+              <ArrowRight size={18} />
+            </Link>
+            <Link href="/resources" className="button-secondary">
+              Explore the library
+            </Link>
           </div>
+          <ul className="hero-rhythms" aria-label="Study rhythm highlights">
+            {rhythms.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </div>
 
-        <div className="rounded-3xl bg-white p-6 shadow-2xl">
-          <div className="mb-4 rounded-2xl bg-slate-100 p-4">
-            <div className="flex items-start justify-between gap-4">
+        <div className="hero-stage">
+          <div className="hero-stage-card hero-stage-card-primary">
+            <div className="stage-label">
+              <Sparkles size={16} />
+              Today&apos;s flow
+            </div>
+            <h2>Read, reflect, respond.</h2>
+            <p>
+              Move from John 15 into guided notes, prayer prompts, and memory
+              work with a layout that keeps the next faithful step visible.
+            </p>
+            <div className="stage-grid">
               <div>
-                <h2 className="text-xl font-bold">Verse of the Day</h2>
-                <p className="mt-3 text-slate-700">“{currentVerse.text}”</p>
-                <p className="mt-2 font-semibold text-blue-700">
-                  {currentVerse.reference}
-                </p>
+                <span>Passage</span>
+                <strong>John 15:1-17</strong>
               </div>
-              <button
-                onClick={nextVerse}
-                aria-label="Show new verse"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                New Verse
-              </button>
+              <div>
+                <span>Focus</span>
+                <strong>Abide in Christ</strong>
+              </div>
+              <div>
+                <span>Practice</span>
+                <strong>Write one prayer</strong>
+              </div>
+              <div>
+                <span>Review</span>
+                <strong>Save a key verse</strong>
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-blue-50 p-4">
-            <h3 className="text-lg font-bold">Today’s Study Focus</h3>
-            <ul className="mt-3 space-y-2 text-slate-700">
-              <li>Read John 1</li>
-              <li>Reflect on God’s grace</li>
-              <li>Write one prayer request</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FeatureCard({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-3xl bg-white p-6 shadow-md transition hover:-translate-y-1 hover:shadow-xl">
-      <h3 className="mb-3 text-xl font-bold">{title}</h3>
-      <p className="text-slate-600">{description}</p>
-    </div>
-  );
-}
-
-function FeaturesSection({
-  features,
-}: {
-  features: { title: string; description: string }[];
-}) {
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-12">
-      <h2 className="mb-8 text-center text-3xl font-bold">Main Features</h2>
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {features.map((feature) => (
-          <FeatureCard
-            key={feature.title}
-            title={feature.title}
-            description={feature.description}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function TopicsSection({
-  topics,
-  selectedTopic,
-  setSelectedTopic,
-}: {
-  topics: string[];
-  selectedTopic: string;
-  setSelectedTopic: (topic: string) => void;
-}) {
-  const filteredTopics = topics.filter((topic) =>
-    topic.toLowerCase().includes(selectedTopic.toLowerCase()),
-  );
-
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-12">
-      <div className="rounded-3xl bg-slate-900 p-8 text-white shadow-2xl">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="mb-2 text-3xl font-bold">Popular Study Topics</h2>
-            <p className="text-sm text-slate-300">
-              This section teaches React state. As you type, the UI updates
-              instantly.
+          <div className="hero-stage-card hero-stage-card-quote">
+            <div className="stage-label">
+              <BookHeart size={16} />
+              Guiding verse
+            </div>
+            <p className="quote">
+              &ldquo;Your word is a lamp to my feet and a light to my
+              path.&rdquo;
             </p>
+            <span>Psalm 119:105</span>
           </div>
-
-          <input
-            type="text"
-            value={selectedTopic}
-            onChange={(event) => setSelectedTopic(event.target.value)}
-            placeholder="Search topics"
-            className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-slate-300 md:max-w-xs"
-          />
         </div>
+      </section>
 
-        <div className="flex flex-wrap gap-3">
-          {filteredTopics.length > 0 ? (
-            filteredTopics.map((topic) => (
-              <span
-                key={topic}
-                className="rounded-full bg-white/10 px-4 py-2 text-sm font-medium"
-              >
-                {topic}
-              </span>
-            ))
-          ) : (
-            <p className="text-slate-300">No topics match your search.</p>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PrayerJournalSection({
-  prayerEntry,
-  setPrayerEntry,
-  savedPrayer,
-  savePrayer,
-}: {
-  prayerEntry: string;
-  setPrayerEntry: (entry: string) => void;
-  savedPrayer: string;
-  savePrayer: () => void;
-}) {
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-12">
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="rounded-3xl bg-white p-8 shadow-md">
-          <h2 className="mb-4 text-2xl font-bold">Prayer Journal</h2>
-          <p className="mb-4 text-slate-600">
-            This section teaches controlled inputs in React. What you type is
-            stored in state.
-          </p>
-          <textarea
-            value={prayerEntry}
-            onChange={(event) => setPrayerEntry(event.target.value)}
-            placeholder="Write your prayer here"
-            className="min-h-45 w-full rounded-2xl border border-slate-200 p-4 text-slate-700 outline-none"
-          />
-          <button
-            onClick={savePrayer}
-            className="mt-4 rounded-2xl bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
-          >
-            Save Prayer
-          </button>
-        </div>
-
-        <div className="rounded-3xl bg-white p-8 shadow-md">
-          <h2 className="mb-4 text-2xl font-bold">Saved Prayer</h2>
-          <p className="text-slate-600">
-            {savedPrayer ||
-              "No prayer saved yet. Type in the journal and click save."}
+      <section className="section-block">
+        <div className="section-heading">
+          <p className="eyebrow">What changed</p>
+          <h2>The website now leads with outcomes, not clutter.</h2>
+          <p>
+            The rebuild trades the old starter-page feel for a more structured
+            front door, stronger typography, and a visual system that can scale
+            with the rest of the app.
           </p>
         </div>
-      </div>
-    </section>
-  );
-}
+        <div className="feature-grid">
+          {featureCards.map(({ title, description, icon: Icon }) => (
+            <article key={title} className="feature-card">
+              <div className="feature-icon">
+                <Icon size={22} />
+              </div>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-function LearnReactSection() {
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-12">
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="rounded-3xl bg-white p-8 shadow-md">
-          <h2 className="mb-4 text-2xl font-bold">
-            Why this is built with React
-          </h2>
-          <p className="text-slate-600">
-            React lets us break the page into reusable pieces, like cards,
-            buttons, and topic tags. That makes the website easier to grow
-            later.
+      <section className="section-block pathways">
+        <div className="section-heading">
+          <p className="eyebrow">Designed around real use</p>
+          <h2>Three ways the new experience supports study.</h2>
+        </div>
+        <div className="pathway-list">
+          {pathways.map((pathway) => (
+            <article key={pathway.title} className="pathway-card">
+              <p className="pathway-eyebrow">{pathway.eyebrow}</p>
+              <h3>{pathway.title}</h3>
+              <p>{pathway.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="section-block stats-band">
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat-card">
+            <strong>{stat.value}</strong>
+            <span>{stat.label}</span>
+          </div>
+        ))}
+      </section>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <p className="eyebrow">What comes next</p>
+          <h2>New product layers are starting to take shape.</h2>
+          <p>
+            The app is growing toward onboarding, reminders, shared study,
+            saved image workflows, and a more personal dashboard.
           </p>
         </div>
+        <div className="feature-grid">
+          {expansionCards.map(({ title, description, href, icon: Icon }) => (
+            <article key={title} className="feature-card">
+              <div className="feature-icon">
+                <Icon size={22} />
+              </div>
+              <h3>{title}</h3>
+              <p>{description}</p>
+              <Link href={href} className="button-secondary">
+                Open
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
 
-        <div className="rounded-3xl bg-white p-8 shadow-md">
-          <h2 className="mb-4 text-2xl font-bold">
-            Why this works well in Next.js
-          </h2>
-          <p className="text-slate-600">
-            Next.js uses React and makes it easier to organize pages, improve
-            performance, and turn a React app into a full website.
+      <section className="section-block cta-panel">
+        <div>
+          <p className="eyebrow">Keep exploring</p>
+          <h2>Use the new front door, then dive into the rest of the platform.</h2>
+          <p>
+            Reading plans, devotionals, prayer tools, blogs, memory work, and
+            resource pages now sit behind a much stronger first impression.
           </p>
         </div>
-      </div>
-    </section>
-  );
-}
+        <div className="cta-actions">
+          <Link href="/devotionals" className="button-primary">
+            Open devotionals
+          </Link>
+          <Link href="/images" className="button-secondary">
+            Saved verse images
+          </Link>
+          <Link href="/prayer-journal" className="button-secondary">
+            Visit prayer journal
+          </Link>
+        </div>
+      </section>
 
-function Footer() {
-  return (
-    <footer className="mt-10 border-t border-slate-200 bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-8 text-center text-slate-500">
-        © 2026 Christian Study Guide. Built with Next.js and React.
-      </div>
-    </footer>
-  );
-}
-
-export default function Home() {
-  const [selectedTopic, setSelectedTopic] = useState("");
-  const [verseIndex, setVerseIndex] = useState(0);
-  const [prayerEntry, setPrayerEntry] = useState("");
-  const [savedPrayer, setSavedPrayer] = useState("");
-  const features = [
-    {
-      title: "Bible Reading Plans",
-      description:
-        "Follow simple daily reading plans that help you stay consistent in Scripture.",
-    },
-    {
-      title: "Verse of the Day",
-      description:
-        "See a featured Bible verse to encourage reflection, prayer, and study.",
-    },
-    {
-      title: "Study Topics",
-      description:
-        "Browse Christian topics like faith, prayer, grace, salvation, and spiritual growth.",
-    },
-    {
-      title: "Prayer Journal",
-      description:
-        "Write down prayer requests, answered prayers, and notes from your devotional time.",
-    },
-  ];
-
-  const topics = [
-    "Faith",
-    "Prayer",
-    "Salvation",
-    "Grace",
-    "Forgiveness",
-    "Spiritual Warfare",
-  ];
-
-  const currentVerse = verses[verseIndex];
-
-  function nextVerse() {
-    setVerseIndex((previousIndex) => (previousIndex + 1) % verses.length);
-  }
-
-  function savePrayer() {
-    setSavedPrayer(prayerEntry);
-  }
-
-  return (
-    <main className="min-h-screen bg-linear-to-b from-blue-50 to-white text-slate-900">
-      <Header />
-      <HeroSection currentVerse={currentVerse} nextVerse={nextVerse} />
-      <div className="mx-auto max-w-2xl">
-        <FunFact />
-      </div>
-      <FeaturesSection features={features} />
-      <TopicsSection
-        topics={topics}
-        selectedTopic={selectedTopic}
-        setSelectedTopic={setSelectedTopic}
-      />
-      <PrayerJournalSection
-        prayerEntry={prayerEntry}
-        setPrayerEntry={setPrayerEntry}
-        savedPrayer={savedPrayer}
-        savePrayer={savePrayer}
-      />
-      <LearnReactSection />
-      <Footer />
+      <section className="section-block section-block-last">
+        <div className="closing-note">
+          <Flame size={18} />
+          <p>
+            The site now has a clearer identity and a sturdier foundation for
+            expanding the rest of the pages.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

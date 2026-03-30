@@ -1,4 +1,4 @@
-import { generateVerseImage } from "@/lib/verse-image";
+import { generateVerseImage, normalizeVerseArtworkTheme } from "@/lib/verse-image";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   const reference = searchParams.get("reference") || "John 3:16";
   const backgroundColor = searchParams.get("bg") || "#1f2937";
   const textColor = searchParams.get("text") || "#ffffff";
+  const theme = normalizeVerseArtworkTheme(searchParams.get("theme"));
 
   try {
     const imageBuffer = await generateVerseImage({
@@ -15,6 +16,7 @@ export async function GET(request: Request) {
       reference,
       backgroundColor,
       textColor,
+      theme,
       width: 1200,
       height: 630,
     });

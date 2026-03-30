@@ -2,46 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ClientSocialShare from "../../../components/ClientSocialShare";
 
-function Header() {
-  return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-4">
-        <nav className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-slate-900">
-            Christian Study Guide
-          </Link>
-          <div className="flex gap-6">
-            <Link
-              href="/prayer-journal"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Prayer Journal
-            </Link>
-            <Link
-              href="/devotionals"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Devotionals
-            </Link>
-            <Link
-              href="/scripture-memory"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Memory
-            </Link>
-            <Link
-              href="/resources"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Resources
-            </Link>
-          </div>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
 const posts = {
   "understanding-the-gospel": {
     title: "Understanding the Gospel: The Good News of Jesus Christ",
@@ -104,66 +64,69 @@ const posts = {
 </blockquote>
 
 <blockquote>
-          <div className="flex gap-6">
-            <Link
-              href="/prayer-journal"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Prayer Journal
-            </Link>
-            <Link
-              href="/devotionals"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Devotionals
-            </Link>
-            <Link
-              href="/scripture-memory"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Memory
-            </Link>
-            <Link
-              href="/resources"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Resources
-            </Link>
-<p>Admitting our sins and receiving God's forgiveness.</p>
+<p>"For I am not ashamed of the gospel, because it is the power of God that brings salvation to everyone who believes." - Romans 1:16</p>
+</blockquote>
+
+<p>The gospel is not merely information to understand; it is truth that calls for a response. When we trust Christ, we are forgiven, adopted, and invited into a new life shaped by His grace and mission.</p>
+    `,
+  },
+  "prayer-power-of-faith": {
+    title: "The Power of Prayer: Connecting with God Through Faith",
+    date: "March 29, 2026",
+    content: `
+<h1>The Power of Prayer: Connecting with God Through Faith</h1>
+
+<p>Prayer is one of the clearest gifts God gives His people. It is not a technique for controlling outcomes, but a real invitation into communion with the Father through Christ.</p>
+
+<h2>What Prayer Really Is</h2>
+
+<p>Prayer is conversation with God. It includes praise, confession, thanksgiving, lament, intercession, and surrender. Scripture presents prayer not as performance, but as dependence.</p>
+
+<h2>Prayer and Faith Belong Together</h2>
+
+<p>Faith does not mean pretending we never struggle. It means bringing our fears, needs, and hopes to God because we believe He hears us and cares for us. Prayer becomes one of the most practical expressions of trust.</p>
+
+<h2>Patterns for a Healthier Prayer Life</h2>
+
+<h3>1. Adoration</h3>
+<p>Begin by remembering who God is. Worship recenters the heart.</p>
+
+<h3>2. Confession</h3>
+<p>Bring sin honestly into the light and receive God's mercy.</p>
 
 <h3>3. Thanksgiving</h3>
-<p>Expressing gratitude for God's blessings and provision.</p>
+<p>Gratitude softens anxiety and reminds us of God's faithfulness.</p>
 
 <h3>4. Supplication</h3>
-<p>Making requests for ourselves and others.</p>
+<p>Ask boldly for wisdom, strength, provision, and help for others.</p>
 
 <h2>Why Prayer Matters</h2>
 
-<p>Prayer changes things. It changes our perspective, aligns our will with God's will, and invites God's power into our circumstances.</p>
+<p>Prayer changes our perspective. It aligns our hearts with God's will and trains us to live with expectancy instead of self-reliance. We often enter prayer burdened and leave steadied, even before circumstances change.</p>
 
 <h2>Biblical Examples of Prayer</h2>
 
 <ul>
-<li><strong>Daniel</strong> prayed faithfully despite danger (Daniel 6)</li>
-<li><strong>Jesus</strong> prayed in the Garden of Gethsemane (Matthew 26:36-46)</li>
-<li><strong>Paul</strong> prayed for the churches he planted (Ephesians 1:15-23)</li>
+<li><strong>Daniel</strong> prayed faithfully despite pressure and danger.</li>
+<li><strong>Jesus</strong> often withdrew to lonely places to pray.</li>
+<li><strong>Paul</strong> continually prayed for the churches he served.</li>
 </ul>
 
-<h2>How to Develop a Prayer Life</h2>
+<h2>How to Grow in Prayer</h2>
 
 <ol>
-<li>Set aside dedicated time for prayer</li>
-<li>Find a quiet place where you won't be disturbed</li>
-<li>Use the Bible as a guide for your prayers</li>
-<li>Be persistent and faithful</li>
-<li>Listen for God's response</li>
+<li>Choose a consistent time, even if it is short.</li>
+<li>Use Scripture to shape what you pray.</li>
+<li>Keep a journal of requests and answers.</li>
+<li>Pray honestly, not impressively.</li>
+<li>Stay faithful when the answers are slow.</li>
 </ol>
 
 <blockquote>
 <p>"Pray without ceasing." - 1 Thessalonians 5:17</p>
 </blockquote>
 
-<p>Prayer is not just a religious duty—it's a relationship-building activity that draws us closer to God and transforms our lives.</p>
+<p>Prayer is not only something we do when we are desperate. It is one of the primary ways we remain near to God, learn to trust Him, and carry real burdens into His presence.</p>
     `,
   },
   "faith-overcoming-doubt": {
@@ -795,21 +758,18 @@ export default async function BlogPost({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-blue-50 to-white text-slate-900">
-      <Header />
-      <article className="mx-auto max-w-4xl px-6 py-16">
-        <div className="mb-8">
-          <Link
-            href="/blog"
-            className="inline-block rounded-2xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-800 transition hover:bg-slate-100 mb-6"
-          >
-            ← Back to Blog
-          </Link>
-          <time className="text-sm text-slate-500">{post.date}</time>
-          <h1 className="mt-2 text-3xl font-extrabold md:text-4xl">
-            {post.title}
-          </h1>
-          <div className="mt-4 flex justify-end">
+    <main id="main-content" className="page-shell article-shell">
+      <article className="article-card">
+        <Link href="/blog" className="button-secondary article-back">
+          Back to blog
+        </Link>
+        <div className="content-chip-row">
+          <span className="article-badge">Article</span>
+          <time className="article-meta">{post.date}</time>
+        </div>
+        <div className="article-header-row">
+          <h1>{post.title}</h1>
+          <div className="article-share">
             <ClientSocialShare
               text={`Read this blog post: ${post.title}`}
               url={`https://yourdomain.com/blog/${slug}`}
@@ -817,7 +777,7 @@ export default async function BlogPost({ params }: PageProps) {
           </div>
         </div>
 
-        <div className="prose prose-lg max-w-none">
+        <div className="reader-prose">
           <div
             dangerouslySetInnerHTML={{
               __html: post.content.replace(/\n/g, "<br>"),

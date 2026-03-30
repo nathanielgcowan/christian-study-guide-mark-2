@@ -1,66 +1,126 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
+import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SignInPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (clientError) {
+      console.error(clientError);
+      setError(
+        clientError instanceof Error
+          ? clientError.message
+          : "Unable to sign in right now.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
-      <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-lg">
-        <h1 className="mb-4 text-2xl font-bold">Admin Sign In</h1>
-        <p className="mb-6 text-sm text-slate-600">
-          Sign in to access the admin analytics dashboard. Use your admin email
-          and password.
-        </p>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            const email = String(formData.get("email") || "");
-            const password = String(formData.get("password") || "");
-            signIn("credentials", {
-              email,
-              password,
-              callbackUrl: "/admin/analytics",
-            });
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Email
-            </label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-            />
+    <main className="minimal-shell">
+      <section className="minimal-grid minimal-grid-two">
+        <div className="minimal-hero">
+          <p className="eyebrow">Account Access</p>
+          <h1>Sign in and pick up where you left off.</h1>
+          <p>
+            Use your Supabase-backed account to open your profile, saved
+            passages, prayer requests, and admin tools with a quieter, cleaner
+            workspace.
+          </p>
+          <div className="minimal-actions">
+            <span className="minimal-badge">
+              <Mail size={14} />
+              Email sign-in
+            </span>
+            <span className="minimal-badge">
+              <LockKeyhole size={14} />
+              Secure session
+            </span>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <input
-              name="password"
-              type="password"
-              required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Sign in
-          </button>
-        </form>
-        <div className="mt-4 text-center text-sm text-slate-500">
-          <Link href="/" className="text-blue-600 hover:underline">
-            Back to home
-          </Link>
         </div>
-      </div>
+
+        <div className="minimal-card minimal-form">
+          <h2>Welcome back</h2>
+          <p className="minimal-note">
+            Minimal, direct, and fast. Just sign in and continue.
+          </p>
+
+          {error ? (
+            <div className="minimal-banner minimal-banner-error">{error}</div>
+          ) : null}
+
+          <form onSubmit={handleSubmit} className="minimal-form-grid">
+            <div>
+              <label className="minimal-label">Email</label>
+              <input
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                type="email"
+                required
+                className="minimal-input"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label className="minimal-label">Password</label>
+              <input
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                type="password"
+                required
+                className="minimal-input"
+                placeholder="Enter password"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="button-primary"
+            >
+              {loading ? "Signing in..." : "Sign in"}
+              <ArrowRight size={16} />
+            </button>
+          </form>
+
+          <div className="minimal-links">
+            <Link href="/auth/register" className="minimal-link">
+              Create account
+            </Link>
+            <Link href="/" className="minimal-link">
+              Back to home
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

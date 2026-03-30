@@ -1,8 +1,9 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { HeartHandshake, Plus } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface PrayerRequest {
   id: string;
@@ -14,28 +15,36 @@ interface PrayerRequest {
 }
 
 export default function PrayerRequestsPage() {
-  const { data: session, status } = useSession();
+  const [signedIn, setSignedIn] = useState(false);
   const [requests, setRequests] = useState<PrayerRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ title: "", description: "" });
 
   useEffect(() => {
-    fetchRequests();
+    async function loadRequests() {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setSignedIn(Boolean(session));
+
+      const response = await fetch("/api/user/prayer-requests");
+      if (response.ok) {
+        const data = (await response.json()) as {
+          prayerRequests: PrayerRequest[];
+        };
+        setRequests(data.prayerRequests);
+      }
+      setLoading(false);
+    }
+
+    void loadRequests();
   }, []);
 
-  async function fetchRequests() {
-    const response = await fetch("/api/user/prayer-requests");
-    if (response.ok) {
-      const data = await response.json();
-      setRequests(data.prayerRequests);
-    }
-    setLoading(false);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (status !== "authenticated") {
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!signedIn) {
       alert("Please sign in first");
       return;
     }
@@ -49,86 +58,118 @@ export default function PrayerRequestsPage() {
     if (response.ok) {
       setFormData({ title: "", description: "" });
       setShowForm(false);
-      fetchRequests();
+
+      const reload = await fetch("/api/user/prayer-requests");
+      if (reload.ok) {
+        const data = (await reload.json()) as {
+          prayerRequests: PrayerRequest[];
+        };
+        setRequests(data.prayerRequests);
+      }
     }
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Prayer Requests</h1>
-        <Link href="/" className="text-blue-600 hover:underline">
-          Back home
-        </Link>
-      </div>
-
-      {status === "authenticated" && (
-        <button
-          onClick={() => setShowForm(!showForm)}
-          aria-label="Toggle prayer request form"
-          className="mb-6 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          {showForm ? "Cancel" : "Submit Prayer Request"}
-        </button>
-      )}
-
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
-        >
-          <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Request title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              required
-            />
-            <textarea
-              placeholder="Describe your prayer request"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              rows={4}
-              required
-            />
-            <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-            >
-              Submit
-            </button>
+    <main className="minimal-shell">
+      <section className="minimal-grid">
+        <div className="minimal-section-heading">
+          <div className="minimal-hero">
+            <p className="eyebrow">Community Prayer</p>
+            <h1>Shared prayer requests in a quieter format.</h1>
+            <p>
+              Read, post, and revisit requests without the heavy dashboard feel.
+            </p>
           </div>
-        </form>
-      )}
-
-      {loading ? (
-        <p>Loading prayer requests...</p>
-      ) : requests.length === 0 ? (
-        <p className="text-slate-600">No prayer requests yet.</p>
-      ) : (
-        <div className="space-y-4">
-          {requests.map((request) => (
-            <div
-              key={request.id}
-              className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          {signedIn ? (
+            <button
+              onClick={() => setShowForm(!showForm)}
+              aria-label="Toggle prayer request form"
+              className="button-primary"
             >
-              <h3 className="mb-2 text-lg font-bold">{request.title}</h3>
-              <p className="mb-3 text-slate-600">{request.description}</p>
-              <div className="flex items-center justify-between text-sm text-slate-500">
-                <span>By {request.user.name || request.user.email}</span>
-                <span>{request.prayerCount} people praying</span>
+              <Plus size={16} />
+              {showForm ? "Close form" : "New request"}
+            </button>
+          ) : null}
+        </div>
+
+        {showForm ? (
+          <form onSubmit={handleSubmit} className="minimal-card minimal-form">
+            <h2>Share a request</h2>
+            <div className="minimal-form-grid">
+              <div>
+                <label className="minimal-label">Title</label>
+                <input
+                  type="text"
+                  placeholder="What should people pray for?"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  className="minimal-input"
+                  required
+                />
+              </div>
+              <div>
+                <label className="minimal-label">Description</label>
+                <textarea
+                  placeholder="Describe your prayer request"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="minimal-textarea"
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="minimal-actions">
+                <button type="submit" className="button-primary">
+                  Submit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="button-secondary"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </form>
+        ) : null}
+
+        {loading ? (
+          <p>Loading prayer requests...</p>
+        ) : requests.length === 0 ? (
+          <section className="minimal-card minimal-empty">
+            <HeartHandshake className="mx-auto mb-4 h-10 w-10 text-[var(--accent-strong)]" />
+            <h2>No prayer requests yet</h2>
+            <p>The first shared request can set the tone for the whole page.</p>
+          </section>
+        ) : (
+          <section className="minimal-list">
+            {requests.map((request) => (
+              <article key={request.id} className="minimal-item">
+                <div>
+                  <h3>{request.title}</h3>
+                  <p>{request.description}</p>
+                  <div className="minimal-meta">
+                    <span>By {request.user.name || request.user.email}</span>
+                    <span>{request.prayerCount} people praying</span>
+                    <span>
+                      {new Date(request.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+
+        <Link href="/" className="minimal-link">
+          Back to home
+        </Link>
+      </section>
     </main>
   );
 }

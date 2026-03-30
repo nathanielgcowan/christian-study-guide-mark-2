@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { Activity, BookOpen, Heart, LayoutGrid } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface UserMetric {
   id: number;
@@ -14,35 +15,64 @@ interface UserMetric {
 }
 
 export default function AdminAnalyticsPage() {
-  const { data: session, status } = useSession();
   const [metrics, setMetrics] = useState<UserMetric[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [signedIn, setSignedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = status === "authenticated" && session?.user?.role === "admin";
-
   useEffect(() => {
-    if (!isAdmin) return;
+    async function loadMetrics() {
+      setError(null);
+      const supabase = createClient();
 
-    setLoading(true);
-    setError(null);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    fetch("/api/admin/analytics")
-      .then(async (res) => {
-        if (!res.ok) {
-          const body = await res.json();
-          throw new Error(body.error || "Failed to fetch metrics");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setMetrics(data.metrics);
-      })
-      .catch((err) => {
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-  }, [isAdmin]);
+      if (!session) {
+        setSignedIn(false);
+        setLoading(false);
+        return;
+      }
+
+      setSignedIn(true);
+
+      const profileResponse = await fetch("/api/profile");
+      if (!profileResponse.ok) {
+        setLoading(false);
+        return;
+      }
+
+      const profile = (await profileResponse.json()) as {
+        role?: string | null;
+      };
+
+      const adminAccess =
+        profile.role === "admin" || profile.role === "super_admin";
+      setIsAdmin(adminAccess);
+
+      if (!adminAccess) {
+        setLoading(false);
+        return;
+      }
+
+      const metricsResponse = await fetch("/api/admin/analytics");
+
+      if (!metricsResponse.ok) {
+        const body = (await metricsResponse.json()) as { error?: string };
+        setError(body.error || "Failed to fetch metrics");
+        setLoading(false);
+        return;
+      }
+
+      const data = (await metricsResponse.json()) as { metrics: UserMetric[] };
+      setMetrics(data.metrics);
+      setLoading(false);
+    }
+
+    void loadMetrics();
+  }, []);
 
   const totals = useMemo(() => {
     return metrics.reduce(
@@ -56,94 +86,93 @@ export default function AdminAnalyticsPage() {
     );
   }, [metrics]);
 
+  const statTiles = [
+    { label: "Active users", value: totals.users, icon: LayoutGrid },
+    { label: "Study sessions", value: totals.sessions, icon: BookOpen },
+    { label: "Prayers logged", value: totals.prayers, icon: Heart },
+    { label: "Page activity", value: totals.pages, icon: Activity },
+  ];
+
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Admin Analytics Dashboard</h1>
-        <Link
-          href="/"
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-        >
-          Back to Homepage
-        </Link>
-      </div>
-
-      {status === "loading" && <p>Loading session...</p>}
-
-      {status === "unauthenticated" && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 p-6 text-rose-800">
-          <h2 className="text-xl font-semibold">Not signed in</h2>
-          <p className="mt-2">Sign in as an admin to access analytics.</p>
-        </div>
-      )}
-
-      {status === "authenticated" && !isAdmin && (
-        <div className="rounded-xl border border-rose-300 bg-rose-50 p-6 text-rose-800">
-          <h2 className="text-xl font-semibold">Access Denied</h2>
-          <p className="mt-2">You are not an admin.</p>
-        </div>
-      )}
-
-      {isAdmin && (
-        <section className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-xl bg-slate-900 p-4 text-white">
-              <div className="text-xs uppercase tracking-wider text-slate-300">
-                Active Users
-              </div>
-              <div className="mt-2 text-3xl font-bold">{totals.users}</div>
-            </div>
-            <div className="rounded-xl bg-blue-600 p-4 text-white">
-              <div className="text-xs uppercase tracking-wider text-blue-100">
-                Total Sessions
-              </div>
-              <div className="mt-2 text-3xl font-bold">{totals.sessions}</div>
-            </div>
-            <div className="rounded-xl bg-emerald-600 p-4 text-white">
-              <div className="text-xs uppercase tracking-wider text-emerald-100">
-                Prayers Logged
-              </div>
-              <div className="mt-2 text-3xl font-bold">{totals.prayers}</div>
-            </div>
-            <div className="rounded-xl bg-indigo-600 p-4 text-white">
-              <div className="text-xs uppercase tracking-wider text-indigo-100">
-                Pages Visited
-              </div>
-              <div className="mt-2 text-3xl font-bold">{totals.pages}</div>
-            </div>
+    <main className="minimal-shell">
+      <section className="minimal-grid">
+        <div className="minimal-section-heading">
+          <div className="minimal-hero">
+            <p className="eyebrow">Admin View</p>
+            <h1>Analytics with less dashboard noise.</h1>
+            <p>
+              A clearer read on usage and engagement without crowded panels or
+              aggressive color blocking.
+            </p>
           </div>
+          <Link href="/" className="button-secondary">
+            Back to home
+          </Link>
+        </div>
 
-          {error && <div className="text-rose-600">{error}</div>}
-          {loading && <div>Loading analytics..</div>}
+        {loading && <p>Loading session...</p>}
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-            <table className="min-w-full divide-y divide-slate-200 text-left">
-              <thead className="bg-slate-100 text-slate-700">
-                <tr>
-                  <th className="px-4 py-3 text-sm font-semibold">User</th>
-                  <th className="px-4 py-3 text-sm font-semibold">
-                    Last Active
-                  </th>
-                  <th className="px-4 py-3 text-sm font-semibold">Sessions</th>
-                  <th className="px-4 py-3 text-sm font-semibold">Prayers</th>
-                  <th className="px-4 py-3 text-sm font-semibold">Pages</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {metrics.map((metric) => (
-                  <tr key={metric.id}>
-                    <td className="px-4 py-3">{metric.email}</td>
-                    <td className="px-4 py-3">{metric.lastActive}</td>
-                    <td className="px-4 py-3">{metric.sessions}</td>
-                    <td className="px-4 py-3">{metric.prayersLogged}</td>
-                    <td className="px-4 py-3">{metric.pagesVisited}</td>
+        {!loading && !signedIn && (
+          <section className="minimal-card minimal-status">
+            <h2>Not signed in</h2>
+            <p className="minimal-note">
+              Sign in as an admin to access analytics.
+            </p>
+          </section>
+        )}
+
+        {!loading && signedIn && !isAdmin && (
+          <section className="minimal-card minimal-status">
+            <h2>Access denied</h2>
+            <p className="minimal-note">
+              Your account is signed in but does not currently have admin access.
+            </p>
+          </section>
+        )}
+
+        {!loading && isAdmin && (
+          <>
+            <section className="minimal-stat-grid">
+              {statTiles.map(({ label, value, icon: Icon }) => (
+                <article key={label} className="minimal-card stat-tile">
+                  <span className="minimal-badge">
+                    <Icon size={14} />
+                    {label}
+                  </span>
+                  <strong>{value}</strong>
+                </article>
+              ))}
+            </section>
+
+            {error ? <div className="minimal-banner minimal-banner-error">{error}</div> : null}
+
+            <section className="minimal-table-wrap">
+              <table className="minimal-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Last active</th>
+                    <th>Sessions</th>
+                    <th>Prayers</th>
+                    <th>Pages</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+                </thead>
+                <tbody>
+                  {metrics.map((metric) => (
+                    <tr key={metric.id}>
+                      <td>{metric.email}</td>
+                      <td>{new Date(metric.lastActive).toLocaleString()}</td>
+                      <td>{metric.sessions}</td>
+                      <td>{metric.prayersLogged}</td>
+                      <td>{metric.pagesVisited}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          </>
+        )}
+      </section>
     </main>
   );
 }

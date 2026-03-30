@@ -1,41 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-
-function Header() {
-  return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-4">
-        <nav className="flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-slate-900">
-            Christian Study Guide
-          </Link>
-          <div className="flex gap-6">
-            <Link
-              href="/"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Home
-            </Link>
-            <Link
-              href="/blog"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Blog
-            </Link>
-            <Link
-              href="/scripture-memory"
-              className="text-slate-600 hover:text-slate-900 transition"
-            >
-              Memory
-            </Link>
-          </div>
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 interface MemoryVerse {
   id: string;
@@ -192,7 +157,9 @@ function VerseCard({
         >
           {showText ? "Hide Verse" : "Show Verse"}
         </button>
-        {showText && <p className="text-slate-700 italic">"{verse.text}"</p>}
+        {showText && (
+          <p className="text-slate-700 italic">&ldquo;{verse.text}&rdquo;</p>
+        )}
       </div>
 
       <div className="flex gap-2">
@@ -309,32 +276,34 @@ function AddVerseForm({
 }
 
 export default function ScriptureMemory() {
-  const [verses, setVerses] = useState<MemoryVerse[]>([]);
-  const [selectedCollection, setSelectedCollection] = useState<string>("all");
-  const [filter, setFilter] = useState<string>("all");
+  const [verses, setVerses] = useState<MemoryVerse[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("memoryVerses");
+      if (saved) {
+        try {
+          return JSON.parse(saved) as MemoryVerse[];
+        } catch {
+          return [];
+        }
+      }
+    }
 
-  // Load verses from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("memoryVerses");
-    if (saved) {
-      setVerses(JSON.parse(saved));
-    } else {
-      // Initialize with some default verses
-      const defaultVerses: MemoryVerse[] = [];
-      verseCollections.forEach((collection) => {
-        collection.verses.forEach((verse) => {
-          defaultVerses.push({
-            ...verse,
-            id: `${verse.reference.replace(/\s+/g, "-").toLowerCase()}`,
-            mastered: false,
-            lastReviewed: "",
-            reviewCount: 0,
-          });
+    const defaultVerses: MemoryVerse[] = [];
+    verseCollections.forEach((collection) => {
+      collection.verses.forEach((verse) => {
+        defaultVerses.push({
+          ...verse,
+          id: `${verse.reference.replace(/\s+/g, "-").toLowerCase()}`,
+          mastered: false,
+          lastReviewed: "",
+          reviewCount: 0,
         });
       });
-      setVerses(defaultVerses);
-    }
-  }, []);
+    });
+    return defaultVerses;
+  });
+  const [selectedCollection, setSelectedCollection] = useState<string>("all");
+  const [filter, setFilter] = useState<string>("all");
 
   // Save verses to localStorage whenever they change
   useEffect(() => {
@@ -405,18 +374,15 @@ export default function ScriptureMemory() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white text-slate-900">
-      <Header />
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-extrabold md:text-5xl">
-            Scripture Memory
-          </h1>
-          <p className="text-lg text-slate-600">
-            Hide God's Word in your heart through regular memorization and
-            review.
-          </p>
-        </div>
+    <main id="main-content" className="page-shell content-shell content-stack">
+      <section className="content-hero">
+        <p className="eyebrow">Scripture memory</p>
+        <h1>Memory work that feels more focused and less like a noisy tracker.</h1>
+        <p className="content-lead">
+          Hide God&apos;s Word in your heart through regular memorization and
+          review, with a calmer frame around the practice.
+        </p>
+      </section>
 
         {/* Stats */}
         <div className="mb-8 grid gap-4 md:grid-cols-4">
@@ -542,7 +508,6 @@ export default function ScriptureMemory() {
             </p>
           </div>
         )}
-      </section>
     </main>
   );
 }
