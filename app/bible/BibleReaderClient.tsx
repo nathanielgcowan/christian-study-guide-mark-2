@@ -8,6 +8,7 @@ import {
   ArrowRight,
   BookOpenText,
   Bookmark,
+  Highlighter,
   NotebookPen,
 } from "lucide-react";
 import {
@@ -29,6 +30,14 @@ interface BibleReaderPayload {
   nextChapter: number | null;
 }
 
+interface VerseStudyNote {
+  id: string;
+  reference: string;
+  content: string;
+  noteType: string;
+  color: string;
+}
+
 export default function BibleReaderClient({
   initialBook,
   initialChapter,
@@ -47,6 +56,10 @@ export default function BibleReaderClient({
   const [signedIn, setSignedIn] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [payload, setPayload] = useState<BibleReaderPayload | null>(null);
+  const [notes, setNotes] = useState<VerseStudyNote[]>([]);
+  const [activeVerse, setActiveVerse] = useState<number | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [savingVerse, setSavingVerse] = useState<number | null>(null);
 
   useEffect(() => {
     try {
@@ -77,11 +90,48 @@ export default function BibleReaderClient({
     void loadPassage();
   }, [book, chapter, translation]);
 
+  useEffect(() => {
+    async function loadVerseNotes() {
+      if (!signedIn) {
+        setNotes([]);
+        return;
+      }
+
+      const response = await fetch("/api/user/notes");
+      if (!response.ok) {
+        setNotes([]);
+        return;
+      }
+
+      const data = (await response.json()) as {
+        notes?: VerseStudyNote[];
+      };
+      const chapterPrefix = `${book} ${chapter}:`;
+      setNotes(
+        (data.notes ?? []).filter((note) => note.reference.startsWith(chapterPrefix)),
+      );
+    }
+
+    void loadVerseNotes();
+  }, [signedIn, book, chapter]);
+
   const chapterOptions = useMemo(() => {
     const currentBook = findBibleBook(book);
     const chapterCount = currentBook?.chapters ?? 1;
     return Array.from({ length: chapterCount }, (_, index) => index + 1);
   }, [book]);
+
+  const notesByReference = useMemo(() => {
+    const grouped = new Map<string, VerseStudyNote[]>();
+
+    notes.forEach((note) => {
+      const existing = grouped.get(note.reference) ?? [];
+      existing.push(note);
+      grouped.set(note.reference, existing);
+    });
+
+    return grouped;
+  }, [notes]);
 
   const chapterReference = `${book} ${chapter}`;
   const leadText = payload?.verses[0]?.text ?? "";
@@ -89,6 +139,9 @@ export default function BibleReaderClient({
   function navigate(nextBook: string, nextChapter: number) {
     setBook(nextBook);
     setChapter(nextChapter);
+    setActiveVerse(null);
+    setNoteDraft("");
+    setStatus(null);
     router.push(`/bible/${encodeURIComponent(nextBook)}/${nextChapter}`);
   }
 
@@ -118,6 +171,97 @@ export default function BibleReaderClient({
     });
 
     setStatus(response.ok ? "Study session logged." : "Unable to log study session.");
+  }
+
+  async function saveVerseNote(verseNumber: number) {
+    const content = noteDraft.trim();
+    if (!content) {
+      setStatus("Write a note before saving it.");
+      return;
+    }
+
+    setSavingVerse(verseNumber);
+    const reference = `${book} ${chapter}:${verseNumber}`;
+    const response = await fetch("/api/user/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        content,
+        noteType: "note",
+        color: "#f4f1eb",
+      }),
+    });
+
+    const data = (await response.json()) as VerseStudyNote | { error?: string };
+    setSavingVerse(null);
+
+    if (!response.ok || !("id" in data)) {
+      setStatus("Unable to save verse note right now.");
+      return;
+    }
+
+    setNotes((current) => [data, ...current]);
+    setStatus(`Saved a note on ${reference}.`);
+    setNoteDraft("");
+    setActiveVerse(null);
+  }
+
+  async function toggleHighlight(verseNumber: number, existingHighlight?: VerseStudyNote) {
+    const reference = `${book} ${chapter}:${verseNumber}`;
+    setSavingVerse(verseNumber);
+
+    if (existingHighlight) {
+      const response = await fetch(`/api/user/notes?id=${existingHighlight.id}`, {
+        method: "DELETE",
+      });
+      setSavingVerse(null);
+
+      if (!response.ok) {
+        setStatus("Unable to remove highlight right now.");
+        return;
+      }
+
+      setNotes((current) => current.filter((note) => note.id !== existingHighlight.id));
+      setStatus(`Removed highlight from ${reference}.`);
+      return;
+    }
+
+    const response = await fetch("/api/user/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        content: "Verse highlight",
+        noteType: "highlight",
+        color: "#f4e7b2",
+      }),
+    });
+
+    const data = (await response.json()) as VerseStudyNote | { error?: string };
+    setSavingVerse(null);
+
+    if (!response.ok || !("id" in data)) {
+      setStatus("Unable to save highlight right now.");
+      return;
+    }
+
+    setNotes((current) => [data, ...current]);
+    setStatus(`Highlighted ${reference}.`);
+  }
+
+  async function removeVerseNote(noteId: string, reference: string) {
+    const response = await fetch(`/api/user/notes?id=${noteId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      setStatus("Unable to remove note right now.");
+      return;
+    }
+
+    setNotes((current) => current.filter((note) => note.id !== noteId));
+    setStatus(`Removed note from ${reference}.`);
   }
 
   return (
@@ -165,7 +309,12 @@ export default function BibleReaderClient({
             <label className="minimal-label">Translation</label>
             <select
               value={translation}
-              onChange={(event) => setTranslation(event.target.value)}
+              onChange={(event) => {
+                setTranslation(event.target.value);
+                setActiveVerse(null);
+                setNoteDraft("");
+                setStatus(null);
+              }}
               className="minimal-select"
             >
               {SUPPORTED_TRANSLATIONS.map((entry) => (
@@ -221,12 +370,112 @@ export default function BibleReaderClient({
             <p className="content-card-note">Loading passage...</p>
           ) : (
             <div className="bible-reader-verses">
-              {payload?.verses.map((verse) => (
-                <p key={verse.number} className="bible-reader-verse">
-                  <span>{verse.number}</span>
-                  {verse.text}
-                </p>
-              ))}
+              {payload?.verses.map((verse) => {
+                const verseReference = `${book} ${chapter}:${verse.number}`;
+                const verseNotes = notesByReference.get(verseReference) ?? [];
+                const highlight = verseNotes.find((note) => note.noteType === "highlight");
+                const noteEntries = verseNotes.filter((note) => note.noteType !== "highlight");
+                const editorOpen = activeVerse === verse.number;
+                const verseBusy = savingVerse === verse.number;
+
+                return (
+                  <article
+                    key={verse.number}
+                    className={`bible-reader-verse-block${highlight ? " bible-reader-verse-highlighted" : ""}`}
+                  >
+                    <p className="bible-reader-verse">
+                      <span>{verse.number}</span>
+                      {verse.text}
+                    </p>
+
+                    <div className="bible-reader-verse-actions">
+                      {signedIn ? (
+                        <>
+                          <button
+                            type="button"
+                            className="button-secondary button-small"
+                            disabled={verseBusy}
+                            onClick={() => {
+                              setActiveVerse(editorOpen ? null : verse.number);
+                              if (editorOpen) {
+                                setNoteDraft("");
+                              }
+                            }}
+                          >
+                            <NotebookPen size={15} />
+                            {editorOpen ? "Close note" : "Add note"}
+                          </button>
+                          <button
+                            type="button"
+                            className="button-secondary button-small"
+                            disabled={verseBusy}
+                            onClick={() => void toggleHighlight(verse.number, highlight)}
+                          >
+                            <Highlighter size={15} />
+                            {highlight ? "Remove highlight" : "Highlight"}
+                          </button>
+                        </>
+                      ) : (
+                        <p className="content-card-note">
+                          Sign in to save notes and highlights on individual verses.
+                        </p>
+                      )}
+                    </div>
+
+                    {editorOpen && signedIn ? (
+                      <div className="bible-reader-note-editor">
+                        <label className="minimal-label" htmlFor={`note-${verse.number}`}>
+                          Note for {verseReference}
+                        </label>
+                        <textarea
+                          id={`note-${verse.number}`}
+                          className="minimal-textarea"
+                          placeholder="Write an observation, prayer, or application from this verse."
+                          value={noteDraft}
+                          onChange={(event) => setNoteDraft(event.target.value)}
+                        />
+                        <div className="bible-reader-note-editor-actions">
+                          <button
+                            type="button"
+                            className="button-primary button-small"
+                            disabled={verseBusy}
+                            onClick={() => void saveVerseNote(verse.number)}
+                          >
+                            Save note
+                          </button>
+                          <button
+                            type="button"
+                            className="button-secondary button-small"
+                            onClick={() => {
+                              setActiveVerse(null);
+                              setNoteDraft("");
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {noteEntries.length > 0 ? (
+                      <div className="bible-reader-verse-notes">
+                        {noteEntries.map((note) => (
+                          <article key={note.id} className="bible-reader-note">
+                            <p>{note.content}</p>
+                            <button
+                              type="button"
+                              className="bible-reader-note-link"
+                              onClick={() => void removeVerseNote(note.id, note.reference)}
+                            >
+                              Remove note
+                            </button>
+                          </article>
+                        ))}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
