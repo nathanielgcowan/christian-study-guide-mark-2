@@ -8,10 +8,14 @@ export default function VerseShareClient({
   verse,
   reference,
   theme = "minimal",
+  layout = "classic",
+  mood = "daybreak",
 }: {
   verse?: string;
   reference?: string;
   theme?: string;
+  layout?: string;
+  mood?: string;
 }) {
   const [status, setStatus] = useState<string | null>(null);
   const currentUrl = useMemo(() => {
@@ -28,10 +32,12 @@ export default function VerseShareClient({
       bg: "#111111",
       text: "#ffffff",
       theme,
+      layout,
+      mood,
     });
 
     return `/api/og/verse?${params.toString()}`;
-  }, [theme, verseReference, verseText]);
+  }, [layout, mood, theme, verseReference, verseText]);
 
   async function copyLink() {
     if (!currentUrl) return;

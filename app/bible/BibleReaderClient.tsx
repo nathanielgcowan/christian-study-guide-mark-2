@@ -9,15 +9,20 @@ import {
   BookOpenText,
   Bookmark,
   Highlighter,
+  Library,
   NotebookPen,
 } from "lucide-react";
 import {
+  BibleChapterPointer,
   BIBLE_BOOKS,
   BiblePassageVerse,
   findBibleBook,
+  getBibleReadingProgress,
   getDefaultBibleReference,
+  getVerseStudyResource,
   SUPPORTED_TRANSLATIONS,
 } from "@/lib/bible";
+import { getBookContext, getChapterContext, getReferenceContext } from "@/lib/bible-context";
 import { createClient } from "@/lib/supabase/client";
 
 interface BibleReaderPayload {
@@ -26,8 +31,8 @@ interface BibleReaderPayload {
   chapterCount: number;
   translation: string;
   verses: BiblePassageVerse[];
-  previousChapter: number | null;
-  nextChapter: number | null;
+  previousChapter: BibleChapterPointer | null;
+  nextChapter: BibleChapterPointer | null;
 }
 
 interface VerseStudyNote {
@@ -36,6 +41,21 @@ interface VerseStudyNote {
   content: string;
   noteType: string;
   color: string;
+}
+
+interface ReadingProgressPayload {
+  readingProgress: {
+    book: string;
+    chapter: number;
+    reference: string;
+    translation: string;
+    updatedAt: string | null;
+    progress: {
+      completedChapters: number;
+      totalChapters: number;
+      percentComplete: number;
+    };
+  };
 }
 
 export default function BibleReaderClient({
@@ -49,6 +69,7 @@ export default function BibleReaderClient({
   const defaults = getDefaultBibleReference();
   const defaultBook = findBibleBook(initialBook ?? "")?.name ?? defaults.book;
   const defaultChapter = initialChapter && initialChapter > 0 ? initialChapter : defaults.chapter;
+  const hasExplicitInitialReference = Boolean(initialBook || initialChapter);
   const [book, setBook] = useState(defaultBook);
   const [chapter, setChapter] = useState(defaultChapter);
   const [translation, setTranslation] = useState<string>(defaults.translation);
@@ -60,18 +81,51 @@ export default function BibleReaderClient({
   const [activeVerse, setActiveVerse] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [savingVerse, setSavingVerse] = useState<number | null>(null);
+  const [selectedVerseNumber, setSelectedVerseNumber] = useState<number | null>(null);
+  const [resumeReady, setResumeReady] = useState(hasExplicitInitialReference);
+  const [resumeTimestamp, setResumeTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const supabase = createClient();
-      void supabase.auth.getSession().then(({ data }) => {
-        setSignedIn(Boolean(data.session));
-      });
-    } catch {}
-  }, []);
+    async function loadSessionAndResume() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const isSignedIn = Boolean(session);
+        setSignedIn(isSignedIn);
+
+        if (!isSignedIn || hasExplicitInitialReference) {
+          setResumeReady(true);
+          return;
+        }
+
+        const response = await fetch("/api/user/reading-progress");
+        if (!response.ok) {
+          setResumeReady(true);
+          return;
+        }
+
+        const data = (await response.json()) as ReadingProgressPayload;
+        if (data.readingProgress) {
+          setBook(data.readingProgress.book);
+          setChapter(data.readingProgress.chapter);
+          setTranslation(data.readingProgress.translation);
+          setResumeTimestamp(data.readingProgress.updatedAt);
+        }
+      } catch {
+      } finally {
+        setResumeReady(true);
+      }
+    }
+
+    void loadSessionAndResume();
+  }, [hasExplicitInitialReference]);
 
   useEffect(() => {
     async function loadPassage() {
+      if (!resumeReady) return;
       setLoading(true);
       const params = new URLSearchParams({
         book,
@@ -83,12 +137,17 @@ export default function BibleReaderClient({
       if (response.ok) {
         const data = (await response.json()) as BibleReaderPayload;
         setPayload(data);
+        setSelectedVerseNumber((current) =>
+          current && data.verses.some((verse) => verse.number === current)
+            ? current
+            : (data.verses[0]?.number ?? null),
+        );
       }
       setLoading(false);
     }
 
     void loadPassage();
-  }, [book, chapter, translation]);
+  }, [book, chapter, translation, resumeReady]);
 
   useEffect(() => {
     async function loadVerseNotes() {
@@ -115,6 +174,26 @@ export default function BibleReaderClient({
     void loadVerseNotes();
   }, [signedIn, book, chapter]);
 
+  useEffect(() => {
+    if (!signedIn || !resumeReady) {
+      return;
+    }
+
+    void fetch("/api/user/reading-progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        book,
+        chapter,
+        translation,
+      }),
+    }).then(async (response) => {
+      if (!response.ok) return;
+      const data = (await response.json()) as ReadingProgressPayload;
+      setResumeTimestamp(data.readingProgress.updatedAt);
+    }).catch(() => {});
+  }, [signedIn, resumeReady, book, chapter, translation]);
+
   const chapterOptions = useMemo(() => {
     const currentBook = findBibleBook(book);
     const chapterCount = currentBook?.chapters ?? 1;
@@ -135,12 +214,25 @@ export default function BibleReaderClient({
 
   const chapterReference = `${book} ${chapter}`;
   const leadText = payload?.verses[0]?.text ?? "";
+  const selectedVerse =
+    payload?.verses.find((verse) => verse.number === selectedVerseNumber) ?? payload?.verses[0] ?? null;
+  const selectedVerseReference = selectedVerse
+    ? `${book} ${chapter}:${selectedVerse.number}`
+    : null;
+  const selectedVerseStudy = selectedVerseReference && selectedVerse
+    ? getVerseStudyResource(selectedVerseReference, selectedVerse.text)
+    : null;
+  const bookContext = useMemo(() => getBookContext(book), [book]);
+  const chapterSummary = useMemo(() => getChapterContext(book, chapter), [book, chapter]);
+  const chapterContext = useMemo(() => getReferenceContext(chapterReference), [chapterReference]);
+  const canonProgress = useMemo(() => getBibleReadingProgress(book, chapter), [book, chapter]);
 
   function navigate(nextBook: string, nextChapter: number) {
     setBook(nextBook);
     setChapter(nextChapter);
     setActiveVerse(null);
     setNoteDraft("");
+    setSelectedVerseNumber(null);
     setStatus(null);
     router.push(`/bible/${encodeURIComponent(nextBook)}/${nextChapter}`);
   }
@@ -332,6 +424,14 @@ export default function BibleReaderClient({
             <span className="content-chip">
               {translation.toUpperCase()}
             </span>
+            <span className="content-chip">
+              {canonProgress.percentComplete}% through the Bible
+            </span>
+            {resumeTimestamp ? (
+              <span className="content-chip">
+                Saved {new Date(resumeTimestamp).toLocaleDateString()}
+              </span>
+            ) : null}
           </div>
           <div className="content-actions">
             <button
@@ -339,21 +439,29 @@ export default function BibleReaderClient({
               className="button-secondary"
               disabled={!payload?.previousChapter}
               onClick={() =>
-                payload?.previousChapter ? navigate(book, payload.previousChapter) : null
+                payload?.previousChapter
+                  ? navigate(payload.previousChapter.book, payload.previousChapter.chapter)
+                  : null
               }
             >
               <ArrowLeft size={16} />
-              Previous
+              {payload?.previousChapter
+                ? `${payload.previousChapter.book} ${payload.previousChapter.chapter}`
+                : "Previous"}
             </button>
             <button
               type="button"
               className="button-secondary"
               disabled={!payload?.nextChapter}
               onClick={() =>
-                payload?.nextChapter ? navigate(book, payload.nextChapter) : null
+                payload?.nextChapter
+                  ? navigate(payload.nextChapter.book, payload.nextChapter.chapter)
+                  : null
               }
             >
-              Next
+              {payload?.nextChapter
+                ? `${payload.nextChapter.book} ${payload.nextChapter.chapter}`
+                : "Next"}
               <ArrowRight size={16} />
             </button>
           </div>
@@ -381,7 +489,7 @@ export default function BibleReaderClient({
                 return (
                   <article
                     key={verse.number}
-                    className={`bible-reader-verse-block${highlight ? " bible-reader-verse-highlighted" : ""}`}
+                    className={`bible-reader-verse-block${highlight ? " bible-reader-verse-highlighted" : ""}${selectedVerseNumber === verse.number ? " bible-reader-verse-selected" : ""}`}
                   >
                     <p className="bible-reader-verse">
                       <span>{verse.number}</span>
@@ -389,6 +497,14 @@ export default function BibleReaderClient({
                     </p>
 
                     <div className="bible-reader-verse-actions">
+                      <button
+                        type="button"
+                        className="button-secondary button-small"
+                        onClick={() => setSelectedVerseNumber(verse.number)}
+                      >
+                        <Library size={15} />
+                        {selectedVerseNumber === verse.number ? "Studying verse" : "Study verse"}
+                      </button>
                       {signedIn ? (
                         <>
                           <button
@@ -481,6 +597,206 @@ export default function BibleReaderClient({
         </section>
 
         <aside className="bible-reader-sidebar">
+          <section className="content-card bible-reader-study-panel">
+            <div className="content-section-heading">
+              <p className="eyebrow">Verse study</p>
+              <h2>{selectedVerseReference ?? "Choose a verse"}</h2>
+            </div>
+            {selectedVerse && selectedVerseStudy ? (
+              <div className="content-stack">
+                <p className="content-card-note">{selectedVerseStudy.summary}</p>
+                <div className="bible-reader-study-verse">
+                  <span className="content-chip">Selected verse</span>
+                  <p>{selectedVerse.text}</p>
+                </div>
+                <div className="bible-reader-study-section">
+                  <h3>Cross references</h3>
+                  <div className="bible-reader-cross-reference-list">
+                    {selectedVerseStudy.crossReferences.map((entry) => (
+                      <Link
+                        key={`${selectedVerseReference}-${entry.reference}`}
+                        href={`/passage/${encodeURIComponent(entry.reference)}`}
+                        className="bible-reader-cross-reference"
+                      >
+                        <strong>{entry.reference}</strong>
+                        <span>{entry.label}</span>
+                        <p>{entry.reason}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                <div className="bible-reader-study-section">
+                  <h3>Commentary</h3>
+                  <div className="bible-reader-commentary-list">
+                    {selectedVerseStudy.commentary.map((entry) => (
+                      <article
+                        key={`${selectedVerseReference}-${entry.title}`}
+                        className="bible-reader-commentary-card"
+                      >
+                        <h4>{entry.title}</h4>
+                        <p>{entry.body}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+                <div className="bible-reader-study-section">
+                  <h3>Greek and Hebrew word study</h3>
+                  <div className="bible-reader-commentary-list">
+                    {selectedVerseStudy.originalLanguage.map((entry) => (
+                      <article
+                        key={`${selectedVerseReference}-${entry.strongs}`}
+                        className="bible-reader-commentary-card"
+                      >
+                        <div className="bible-reader-word-header">
+                          <strong>{entry.term}</strong>
+                          <span>{entry.language} · {entry.strongs}</span>
+                        </div>
+                        <p>
+                          <em>{entry.transliteration}</em> · {entry.partOfSpeech}
+                        </p>
+                        <p>{entry.definition}</p>
+                        <p>{entry.nuance}</p>
+                        <div className="dictionary-link-list">
+                          {entry.relatedReferences.map((reference) => (
+                            <Link
+                              key={`${entry.strongs}-${reference}`}
+                              href={`/passage/${encodeURIComponent(reference)}`}
+                              className="button-secondary"
+                            >
+                              {reference}
+                            </Link>
+                          ))}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="content-card-note">
+                Pick a verse to open cross references, commentary, and original-language word cards without leaving the chapter.
+              </p>
+            )}
+          </section>
+
+          <section className="content-card">
+            <div className="content-section-heading">
+              <p className="eyebrow">Book introduction</p>
+              <h2>Read {bookContext.book} with orientation</h2>
+            </div>
+            <div className="content-stack">
+              <article className="content-card-note">
+                <strong>{bookContext.book}</strong>
+                <p>{bookContext.summary}</p>
+                <p>{bookContext.author} · {bookContext.approximateDate}</p>
+              </article>
+              <div className="dictionary-chip-group">
+                {bookContext.themes.map((theme) => (
+                  <span key={`${bookContext.book}-${theme}`} className="content-chip">
+                    {theme}
+                  </span>
+                ))}
+              </div>
+              <p className="content-card-note">{bookContext.whyReadIt}</p>
+              <Link
+                href={`/bible/${encodeURIComponent(bookContext.book)}`}
+                className="button-secondary"
+              >
+                Open full book introduction
+              </Link>
+            </div>
+          </section>
+
+          <section className="content-card">
+            <div className="content-section-heading">
+              <p className="eyebrow">Chapter summary</p>
+              <h2>{chapterSummary.title}</h2>
+            </div>
+            <div className="content-stack">
+              <article className="content-card-note">
+                <p>{chapterSummary.summary}</p>
+              </article>
+              <div className="bible-reader-focus-list">
+                {chapterSummary.readingFocus.map((item) => (
+                  <article
+                    key={`${chapterReference}-${item}`}
+                    className="bible-reader-focus-card"
+                  >
+                    <p>{item}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="content-card">
+            <div className="content-section-heading">
+              <p className="eyebrow">Timeline context</p>
+              <h2>Where this chapter sits</h2>
+            </div>
+            <div className="content-stack">
+              <article className="content-card-note">
+                <strong>{bookContext.book}</strong>
+                <p>{bookContext.summary}</p>
+                <p>{bookContext.era} · {bookContext.approximateDate}</p>
+              </article>
+              {chapterContext.timeline.slice(0, 2).map((event) => (
+                <article key={`${chapterReference}-${event.label}`} className="content-card-note">
+                  <strong>{event.label}</strong>
+                  <p>{event.summary}</p>
+                </article>
+              ))}
+              <Link href="/timeline" className="button-secondary">
+                Open Bible timeline
+              </Link>
+            </div>
+          </section>
+
+          <section className="content-card">
+            <div className="content-section-heading">
+              <p className="eyebrow">Read front to back</p>
+              <h2>Stay in a continuous Bible-reading flow</h2>
+            </div>
+            <div className="content-stack">
+              <article className="content-card-note">
+                <strong>Canonical progress</strong>
+                <p>
+                  You are at {chapterReference}, which is chapter {canonProgress.completedChapters} of{" "}
+                  {canonProgress.totalChapters} in the full Bible reading order.
+                </p>
+                {signedIn ? (
+                  <p>
+                    Your reading place is being saved automatically so you can resume from the dashboard or return to `/bible` later.
+                  </p>
+                ) : null}
+              </article>
+              <div className="dictionary-link-list">
+                {payload?.previousChapter ? (
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    onClick={() =>
+                      navigate(payload.previousChapter!.book, payload.previousChapter!.chapter)
+                    }
+                  >
+                    Previous chapter
+                  </button>
+                ) : null}
+                {payload?.nextChapter ? (
+                  <button
+                    type="button"
+                    className="button-primary"
+                    onClick={() =>
+                      navigate(payload.nextChapter!.book, payload.nextChapter!.chapter)
+                    }
+                  >
+                    Continue reading
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </section>
+
           <section className="content-card">
             <div className="content-section-heading">
               <p className="eyebrow">Quick actions</p>

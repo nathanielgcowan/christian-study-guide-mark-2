@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  getAdjacentBibleChapter,
   findBibleBook,
   getChapterPassage,
   getDefaultBibleReference,
@@ -28,8 +29,8 @@ export async function GET(request: Request) {
     : getDefaultBibleReference().translation;
 
   const verses = await getChapterPassage(book.name, chapter, translation);
-  const nextChapter = chapter < book.chapters ? chapter + 1 : null;
-  const previousChapter = chapter > 1 ? chapter - 1 : null;
+  const nextChapter = getAdjacentBibleChapter(book.name, chapter, "next");
+  const previousChapter = getAdjacentBibleChapter(book.name, chapter, "previous");
 
   return NextResponse.json({
     book: book.name,

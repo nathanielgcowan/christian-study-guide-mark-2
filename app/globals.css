@@ -24,6 +24,7 @@
   --radius-md: 18px;
   --radius-sm: 14px;
   --content-width: min(1120px, calc(100% - 2rem));
+  --focus-ring: 0 0 0 3px rgba(17, 17, 17, 0.14), 0 0 0 6px rgba(247, 245, 239, 0.96);
 }
 
 *,
@@ -51,6 +52,19 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 button,
@@ -89,8 +103,10 @@ select {
   color: white;
 }
 
-.skip-link:focus {
+.skip-link:focus,
+.skip-link:focus-visible {
   transform: translateY(0);
+  box-shadow: var(--focus-ring);
 }
 
 .site-header {
@@ -188,6 +204,24 @@ select {
 .site-footer-nav a:hover,
 .minimal-link:hover {
   color: var(--text);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.site-nav a:focus-visible,
+.site-footer-nav a:focus-visible,
+.brand-mark:focus-visible,
+.minimal-link:focus-visible,
+.bible-reader-note-link:focus-visible {
+  border-radius: 999px;
 }
 
 .button-primary,
@@ -348,6 +382,24 @@ select {
   height: 0.38rem;
   border-radius: 999px;
   background: var(--text);
+}
+
+.hero-lookup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: end;
+  margin-top: 1.4rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  border-radius: calc(var(--radius-lg) - 0.05rem);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.hero-lookup-field {
+  display: grid;
+  gap: 0.45rem;
 }
 
 .hero-stage {
@@ -622,6 +674,7 @@ select {
 .minimal-select:focus {
   border-color: var(--text);
   background: white;
+  box-shadow: var(--focus-ring);
 }
 
 .minimal-textarea {
@@ -1656,6 +1709,13 @@ select {
   box-shadow: inset 0 0 0 1px rgba(145, 118, 38, 0.05);
 }
 
+.bible-reader-verse-selected {
+  border-color: rgba(31, 41, 55, 0.18);
+  box-shadow:
+    0 12px 26px rgba(15, 23, 42, 0.06),
+    inset 0 0 0 1px rgba(31, 41, 55, 0.04);
+}
+
 .bible-reader-verse {
   margin: 0;
   color: var(--text);
@@ -1728,6 +1788,344 @@ select {
 
 .bible-reader-note-link:hover {
   color: var(--text);
+}
+
+.passage-study-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.passage-study-main,
+.passage-study-rail,
+.passage-study-metrics {
+  display: grid;
+  gap: 1rem;
+}
+
+.passage-study-translation,
+.passage-study-prompt,
+.passage-study-activity-item,
+.passage-study-note-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(248, 246, 240, 0.88);
+}
+
+.passage-study-translation p,
+.passage-study-prompt p,
+.passage-study-activity-item p,
+.passage-study-note-card p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.passage-study-note-card strong,
+.passage-study-activity-item strong,
+.passage-study-translation strong {
+  color: var(--text);
+}
+
+.passage-study-chapter {
+  display: grid;
+  gap: 1rem;
+}
+
+.passage-study-chapter-verse {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.9;
+}
+
+.passage-study-chapter-verse span {
+  display: inline-flex;
+  min-width: 2rem;
+  margin-right: 0.45rem;
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.dictionary-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 1rem;
+}
+
+.dictionary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.dictionary-entry {
+  align-content: start;
+}
+
+.dictionary-summary-card {
+  align-content: start;
+}
+
+.dictionary-definition {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.dictionary-definition strong {
+  color: var(--text);
+}
+
+.dictionary-definition p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.75;
+}
+
+.dictionary-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.dictionary-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.atlas-grid,
+.character-grid,
+.atlas-detail-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.atlas-grid,
+.character-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.atlas-detail-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  align-items: start;
+}
+
+.atlas-card,
+.character-card {
+  align-content: start;
+}
+
+.atlas-card p,
+.character-card p {
+  margin: 0;
+  line-height: 1.75;
+}
+
+.bible-reader-study-panel {
+  gap: 1rem;
+}
+
+.bible-reader-study-verse {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: calc(var(--radius-md) + 0.1rem);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(247, 244, 237, 0.9);
+}
+
+.bible-reader-study-verse p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.bible-reader-study-section {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.bible-reader-study-section h3,
+.bible-reader-commentary-card h4 {
+  margin: 0;
+}
+
+.bible-reader-cross-reference-list,
+.bible-reader-commentary-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.bible-reader-cross-reference,
+.bible-reader-commentary-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  border-radius: calc(var(--radius-md) + 0.05rem);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.bible-reader-cross-reference strong,
+.bible-reader-cross-reference span {
+  color: var(--text);
+}
+
+.bible-reader-cross-reference span {
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.bible-reader-cross-reference p,
+.bible-reader-commentary-card p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.bible-reader-word-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.8rem;
+  align-items: baseline;
+}
+
+.bible-reader-word-header strong {
+  color: var(--text);
+}
+
+.bible-reader-word-header span {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.bible-reader-cross-reference:hover {
+  border-color: rgba(31, 41, 55, 0.16);
+  transform: translateY(-1px);
+}
+
+.bible-reader-focus-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.bible-reader-focus-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  border-radius: calc(var(--radius-md) + 0.05rem);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(247, 244, 237, 0.9);
+}
+
+.bible-reader-focus-card p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.admin-content-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.admin-content-sidebar,
+.admin-content-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-content-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+.admin-content-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-content-list-item {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+  padding: 1rem;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  border-radius: calc(var(--radius-md) + 0.05rem);
+  background: rgba(255, 255, 255, 0.84);
+  text-align: left;
+}
+
+.admin-content-list-item p,
+.admin-content-list-item small,
+.admin-content-preview-body {
+  margin: 0;
+}
+
+.admin-content-list-item p,
+.admin-content-list-item small {
+  color: var(--text-soft);
+}
+
+.admin-content-list-item-active {
+  border-color: rgba(31, 41, 55, 0.16);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.admin-content-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.admin-content-featured-toggle {
+  display: grid;
+  align-content: end;
+  gap: 0.5rem;
+}
+
+.admin-content-featured-toggle input {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.admin-content-excerpt {
+  min-height: 7rem;
+}
+
+.admin-content-body {
+  min-height: 15rem;
+}
+
+.admin-content-preview {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.1rem;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  border-radius: calc(var(--radius-lg) - 0.1rem);
+  background: rgba(248, 246, 242, 0.92);
+}
+
+.admin-content-preview h3 {
+  margin: 0;
+}
+
+.admin-content-preview-body {
+  color: var(--text);
+  line-height: 1.75;
+  white-space: pre-wrap;
 }
 
 .site-map-grid {
@@ -1977,6 +2375,38 @@ select {
   gap: 0.75rem;
 }
 
+.verse-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.verse-layout-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius-md) + 0.1rem);
+  background: rgba(255, 255, 255, 0.82);
+  text-align: left;
+}
+
+.verse-layout-card strong,
+.verse-layout-card p {
+  margin: 0;
+}
+
+.verse-layout-card p {
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.verse-layout-card-active {
+  border-color: rgba(31, 41, 55, 0.18);
+  background: rgba(248, 246, 242, 0.96);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
 .verse-color-input {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -2029,6 +2459,40 @@ select {
   opacity: 0.86;
 }
 
+.accessibility-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.accessibility-card,
+.accessibility-stat,
+.accessibility-note {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .button-primary:hover,
+  .button-secondary:hover,
+  .verse-preset:hover,
+  .bible-reader-cross-reference:hover {
+    transform: none;
+  }
+}
+
 @media (max-width: 1024px) {
   .hero-panel,
   .feature-grid,
@@ -2049,6 +2513,10 @@ select {
   }
 
   .hero-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-lookup {
     grid-template-columns: 1fr;
   }
 
@@ -2090,7 +2558,16 @@ select {
 
   .bible-reader-controls,
   .bible-reader-layout,
+  .dictionary-grid,
+  .dictionary-toolbar,
+  .atlas-grid,
+  .character-grid,
+  .atlas-detail-grid,
   .bible-reader-selects,
+  .passage-study-layout,
+  .accessibility-grid,
+  .admin-content-layout,
+  .admin-content-form-grid,
   .site-map-grid {
     grid-template-columns: 1fr;
   }
@@ -2130,7 +2607,8 @@ select {
   }
 
   .bible-reader-verse-actions,
-  .bible-reader-note-editor-actions {
+  .bible-reader-note-editor-actions,
+  .admin-content-toolbar {
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -2145,7 +2623,8 @@ select {
   }
 
   .verse-preset-grid,
-  .verse-color-grid {
+  .verse-color-grid,
+  .verse-layout-grid {
     grid-template-columns: 1fr;
   }
 

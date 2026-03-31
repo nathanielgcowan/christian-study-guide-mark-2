@@ -1,4 +1,9 @@
-import { generateVerseImage, normalizeVerseArtworkTheme } from "@/lib/verse-image";
+import {
+  generateVerseImage,
+  normalizeVerseArtworkTheme,
+  normalizeVerseImageLayout,
+  normalizeVerseSceneMood,
+} from "@/lib/verse-image";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -9,6 +14,8 @@ export async function GET(request: Request) {
   const backgroundColor = searchParams.get("bg") || "#1f2937";
   const textColor = searchParams.get("text") || "#ffffff";
   const theme = normalizeVerseArtworkTheme(searchParams.get("theme"));
+  const layout = normalizeVerseImageLayout(searchParams.get("layout"));
+  const mood = normalizeVerseSceneMood(searchParams.get("mood"));
 
   try {
     const imageBuffer = await generateVerseImage({
@@ -17,6 +24,8 @@ export async function GET(request: Request) {
       backgroundColor,
       textColor,
       theme,
+      layout,
+      mood,
       width: 1200,
       height: 630,
     });

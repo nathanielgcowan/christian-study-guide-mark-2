@@ -50,6 +50,19 @@ interface StudySummary {
   } | null;
 }
 
+interface ReadingProgress {
+  book: string;
+  chapter: number;
+  reference: string;
+  translation: string;
+  updatedAt: string | null;
+  progress: {
+    completedChapters: number;
+    totalChapters: number;
+    percentComplete: number;
+  };
+}
+
 function getDisplayName(session: {
   user: {
     email?: string | null;
@@ -96,6 +109,7 @@ export default function DashboardPage() {
   const [studySummaryData, setStudySummaryData] = useState<StudySummary["streak"]>(
     null,
   );
+  const [readingProgress, setReadingProgress] = useState<ReadingProgress | null>(null);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -119,6 +133,7 @@ export default function DashboardPage() {
         bookmarksResponse,
         prayersResponse,
         studiesResponse,
+        readingProgressResponse,
       ] =
         await Promise.all([
           fetch("/api/user/profile"),
@@ -126,6 +141,7 @@ export default function DashboardPage() {
           fetch("/api/user/bookmarks"),
           fetch("/api/user/prayer-requests"),
           fetch("/api/user/studies"),
+          fetch("/api/user/reading-progress"),
         ]);
 
       if (profileResponse.ok) {
@@ -157,6 +173,13 @@ export default function DashboardPage() {
       if (studiesResponse.ok) {
         const data = (await studiesResponse.json()) as StudySummary;
         setStudySummaryData(data.streak);
+      }
+
+      if (readingProgressResponse.ok) {
+        const data = (await readingProgressResponse.json()) as {
+          readingProgress: ReadingProgress;
+        };
+        setReadingProgress(data.readingProgress);
       }
 
       setLoading(false);
@@ -264,6 +287,45 @@ export default function DashboardPage() {
       ) : null}
 
       <section className="content-grid-two">
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Resume reading</p>
+            <h2>Pick up where you left off</h2>
+          </div>
+          {readingProgress ? (
+            <div className="content-stack">
+              <div className="content-card-note">
+                <strong>{readingProgress.reference}</strong>
+                <p>
+                  {readingProgress.progress.percentComplete}% through the Bible ·{" "}
+                  {readingProgress.translation.toUpperCase()}
+                </p>
+                <p>
+                  Last saved{" "}
+                  {readingProgress.updatedAt
+                    ? new Date(readingProgress.updatedAt).toLocaleDateString()
+                    : "recently"}
+                </p>
+              </div>
+              <div className="content-actions">
+                <Link
+                  href={`/bible/${encodeURIComponent(readingProgress.book)}/${readingProgress.chapter}`}
+                  className="button-primary"
+                >
+                  Resume reading
+                </Link>
+                <Link href="/bible" className="button-secondary">
+                  Open Bible reader
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="content-card-note">
+              Start reading in the Bible reader and your place will appear here automatically.
+            </div>
+          )}
+        </section>
+
         {preferences.visibleWidgets.bookmarks ? (
           <section className="content-card">
             <div className="content-section-heading">

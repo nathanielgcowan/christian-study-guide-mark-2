@@ -7,6 +7,8 @@ interface Props {
     bg?: string;
     text?: string;
     theme?: string;
+    layout?: string;
+    mood?: string;
   }>;
 }
 
@@ -19,8 +21,10 @@ export async function generateMetadata({
   const bg = params.bg || "#1f2937";
   const text = params.text || "#ffffff";
   const theme = params.theme || "minimal";
+  const layout = params.layout || "classic";
+  const mood = params.mood || "daybreak";
 
-  const ogImageUrl = `/api/og/verse?verse=${encodeURIComponent(verse)}&reference=${encodeURIComponent(reference)}&bg=${encodeURIComponent(bg)}&text=${encodeURIComponent(text)}&theme=${encodeURIComponent(theme)}`;
+  const ogImageUrl = `/api/og/verse?verse=${encodeURIComponent(verse)}&reference=${encodeURIComponent(reference)}&bg=${encodeURIComponent(bg)}&text=${encodeURIComponent(text)}&theme=${encodeURIComponent(theme)}&layout=${encodeURIComponent(layout)}&mood=${encodeURIComponent(mood)}`;
 
   return {
     title: `${reference} - Christian Study Guide`,
@@ -51,13 +55,15 @@ import VerseShareClient from "./VerseShareClient";
 export default function ShareVersePage({
   searchParams,
 }: {
-  searchParams?: { verse?: string; reference?: string; theme?: string };
+  searchParams?: { verse?: string; reference?: string; theme?: string; layout?: string; mood?: string };
 }) {
   return (
     <VerseShareClient
       verse={searchParams?.verse}
       reference={searchParams?.reference}
       theme={searchParams?.theme}
+      layout={searchParams?.layout}
+      mood={searchParams?.mood}
     />
   );
 }

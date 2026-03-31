@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import { getBibleCharacters, getBibleLocations } from "@/lib/bible-atlas";
+import { BIBLE_BOOKS } from "@/lib/bible";
 import { blogSlugs, publicStaticRoutes } from "@/lib/site-routes";
 
 function getBaseUrl() {
@@ -33,5 +35,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...routes, ...blogRoutes];
+  const characterRoutes: MetadataRoute.Sitemap = getBibleCharacters().map((character) => ({
+    url: `${baseUrl}/characters/${character.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.75,
+  }));
+
+  const atlasRoutes: MetadataRoute.Sitemap = getBibleLocations().map((location) => ({
+    url: `${baseUrl}/maps/${location.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.75,
+  }));
+
+  const bibleBookRoutes: MetadataRoute.Sitemap = BIBLE_BOOKS.map((book) => ({
+    url: `${baseUrl}/bible/${encodeURIComponent(book.name)}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }));
+
+  return [...routes, ...blogRoutes, ...characterRoutes, ...atlasRoutes, ...bibleBookRoutes];
 }

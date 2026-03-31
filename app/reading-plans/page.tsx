@@ -78,6 +78,7 @@ export default function ReadingPlans() {
   const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingPlanId, setSavingPlanId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [progressMap, setProgressMap] = useState<Record<string, UserPlanProgress>>(
     {},
   );
@@ -103,6 +104,15 @@ export default function ReadingPlans() {
           data.plans.map((plan) => [plan.plan_id, plan]),
         );
         setProgressMap(nextMap);
+      } else {
+        const data = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        setStatusMessage(
+          data?.error?.includes("user_reading_plans")
+            ? "Reading plan tracking is not set up in Supabase yet."
+            : data?.error ?? "Unable to load your reading plan progress right now.",
+        );
       }
       setLoading(false);
     }
@@ -117,6 +127,7 @@ export default function ReadingPlans() {
 
   async function startPlan(planId: string) {
     setSavingPlanId(planId);
+    setStatusMessage(null);
     const plan = readingPlans.find((item) => item.id === planId);
     const response = await fetch("/api/user/reading-plans", {
       method: "POST",
@@ -127,12 +138,23 @@ export default function ReadingPlans() {
     if (response.ok) {
       const data = (await response.json()) as { plan: UserPlanProgress };
       setProgressMap((current) => ({ ...current, [planId]: data.plan }));
+      setStatusMessage(`Started "${plan?.title ?? "reading plan"}".`);
+    } else {
+      const data = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+      setStatusMessage(
+        data?.error?.includes("user_reading_plans")
+          ? "Reading plan tracking is not set up in Supabase yet. Run the reading-plan table migration first."
+          : data?.error ?? "Unable to start this plan right now.",
+      );
     }
     setSavingPlanId(null);
   }
 
   async function updatePlan(planId: string, currentDay: number, completed = false) {
     setSavingPlanId(planId);
+    setStatusMessage(null);
     const response = await fetch(`/api/user/reading-plans/${planId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -142,6 +164,18 @@ export default function ReadingPlans() {
     if (response.ok) {
       const data = (await response.json()) as { plan: UserPlanProgress };
       setProgressMap((current) => ({ ...current, [planId]: data.plan }));
+      setStatusMessage(
+        completed ? "Reading plan completed." : `Updated to day ${currentDay}.`,
+      );
+    } else {
+      const data = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+      setStatusMessage(
+        data?.error?.includes("user_reading_plans")
+          ? "Reading plan tracking is not set up in Supabase yet. Run the reading-plan table migration first."
+          : data?.error ?? "Unable to update this plan right now.",
+      );
     }
     setSavingPlanId(null);
   }
@@ -171,6 +205,12 @@ export default function ReadingPlans() {
               Sign in
             </Link>
           </div>
+        </section>
+      ) : null}
+
+      {statusMessage ? (
+        <section className="content-card">
+          <p className="share-status">{statusMessage}</p>
         </section>
       ) : null}
 

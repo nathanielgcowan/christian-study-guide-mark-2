@@ -31,7 +31,9 @@ export const publicStaticRoutes = [
   "/audio",
   "/bible",
   "/blog",
+  "/characters",
   "/church-events",
+  "/dictionary",
   "/dashboard",
   "/devotionals",
   "/devotionals/daily",
@@ -51,6 +53,7 @@ export const publicStaticRoutes = [
   "/search",
   "/site-map",
   "/social",
+  "/timeline",
   "/user/verse-generator",
   "/verse-comparison",
 ];
@@ -90,9 +93,39 @@ export const siteRouteSections: SiteRouteSection[] = [
         description: "Read by book and chapter with navigation and study handoff.",
       },
       {
+        href: "/dictionary",
+        label: "Biblical Dictionary",
+        description: "Search key biblical words, places, and doctrines.",
+      },
+      {
+        href: "/characters",
+        label: "Bible Characters",
+        description: "Browse key biblical figures with study context and references.",
+      },
+      {
+        href: "/timeline",
+        label: "Bible Timeline",
+        description: "See where books and passages sit in the storyline of Scripture.",
+      },
+      {
+        href: "/dictionary/grace",
+        label: "Dictionary Entry Example",
+        description: "Example dictionary term detail page.",
+      },
+      {
+        href: "/characters/paul",
+        label: "Character Profile Example",
+        description: "Example character profile route.",
+      },
+      {
         href: "/bible/John/3",
         label: "Bible Reader Example",
         description: "Example direct chapter route for John 3.",
+      },
+      {
+        href: "/bible/Romans",
+        label: "Book Introduction Example",
+        description: "Example Bible book introduction route.",
       },
       {
         href: "/passage/John%203%3A16",
@@ -223,6 +256,11 @@ export const siteRouteSections: SiteRouteSection[] = [
         href: "/maps",
         label: "Maps",
         description: "Bible world and location exploration surface.",
+      },
+      {
+        href: "/maps/jerusalem",
+        label: "Atlas Entry Example",
+        description: "Example Bible atlas detail route.",
       },
       {
         href: "/church-events",

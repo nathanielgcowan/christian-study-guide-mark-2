@@ -7,11 +7,14 @@ import { createClient } from "@/lib/supabase/client";
 
 const primaryLinks = [
   { href: "/bible", label: "Bible" },
+  { href: "/characters", label: "Characters" },
+  { href: "/timeline", label: "Timeline" },
+  { href: "/dictionary", label: "Dictionary" },
   { href: "/reading-plans", label: "Reading Plans" },
   { href: "/devotionals", label: "Devotionals" },
-  { href: "/resources", label: "Resources" },
+  { href: "/maps", label: "Atlas" },
   { href: "/groups", label: "Groups" },
-  { href: "/blog", label: "Blog" },
+  { href: "/resources", label: "Resources" },
 ];
 
 export default function Header() {
@@ -82,18 +85,12 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="site-header-actions">
+        <div className="site-header-actions" aria-label="Quick actions">
           <Link
             href="/dashboard"
             className="button-secondary button-small"
           >
             Dashboard
-          </Link>
-          <Link
-            href="/user/verse-generator"
-            className="button-secondary button-small"
-          >
-            Verse Images
           </Link>
           <Link
             href="/prayer-journal"
@@ -106,11 +103,16 @@ export default function Header() {
               type="button"
               onClick={() => void handleSignOut()}
               className="button-primary button-small"
+              aria-label="Sign out of your account"
             >
               Sign Out
             </button>
           ) : (
-            <Link href="/auth/register" className="button-primary button-small">
+            <Link
+              href="/auth/register"
+              className="button-primary button-small"
+              aria-label="Create an account and get started"
+            >
               Get Started
             </Link>
           )}

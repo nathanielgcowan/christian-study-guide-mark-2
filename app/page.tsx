@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HomeVerseLookup from "@/components/HomeVerseLookup";
 import {
   ArrowRight,
   BookHeart,
@@ -127,6 +128,7 @@ export default function Home() {
             explore richer context in a single study environment designed to
             keep attention on God&apos;s Word.
           </p>
+          <HomeVerseLookup />
           <div className="hero-actions">
             <Link href="/reading-plans" className="button-primary">
               Begin a reading path

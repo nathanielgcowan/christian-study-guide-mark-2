@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
-import { generateVerseImage, normalizeVerseArtworkTheme } from "@/lib/verse-image";
+import {
+  generateVerseImage,
+  normalizeVerseArtworkTheme,
+  normalizeVerseImageLayout,
+  normalizeVerseSceneMood,
+} from "@/lib/verse-image";
 
 export async function POST(request: Request) {
   try {
-    const { verse, reference, backgroundColor, textColor, theme } =
+    const { verse, reference, backgroundColor, textColor, theme, layout, mood } =
       await request.json();
 
     if (!verse || !reference) {
@@ -19,6 +24,8 @@ export async function POST(request: Request) {
       backgroundColor: backgroundColor || "#1f2937",
       textColor: textColor || "#ffffff",
       theme: normalizeVerseArtworkTheme(theme),
+      layout: normalizeVerseImageLayout(layout),
+      mood: normalizeVerseSceneMood(mood),
       width: 1200,
       height: 630,
     });

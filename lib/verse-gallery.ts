@@ -6,6 +6,8 @@ export interface SavedVerseImage {
   verse: string;
   reference: string;
   theme: string;
+  layout?: string;
+  mood?: string;
   bgColor: string;
   textColor: string;
   imageUrl: string;

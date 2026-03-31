@@ -38,6 +38,44 @@ const artworkThemes = [
   { id: "shepherd", name: "Shepherd" },
   { id: "dove", name: "Dove" },
   { id: "mountain", name: "Mountain" },
+  { id: "garden", name: "Garden" },
+  { id: "sea", name: "Sea" },
+] as const;
+
+const imageLayouts = [
+  {
+    id: "classic",
+    name: "Classic card",
+    detail: "Balanced verse card with artwork supporting the text.",
+  },
+  {
+    id: "poster",
+    name: "Poster scene",
+    detail: "Picture-first composition with the verse anchored in a lower panel.",
+  },
+  {
+    id: "immersive",
+    name: "Immersive split",
+    detail: "Editorial side panel with more room for the biblical scene itself.",
+  },
+] as const;
+
+const sceneMoods = [
+  {
+    id: "daybreak",
+    name: "Daybreak",
+    detail: "Misty early light and a softer, calmer scene.",
+  },
+  {
+    id: "golden",
+    name: "Golden hour",
+    detail: "Warmer light with a richer cinematic glow.",
+  },
+  {
+    id: "midnight",
+    name: "Midnight",
+    detail: "Darker contrast, quieter skies, and deeper atmosphere.",
+  },
 ] as const;
 
 export default function VerseImageGeneratorPage() {
@@ -47,6 +85,10 @@ export default function VerseImageGeneratorPage() {
   const [textColor, setTextColor] = useState("#f7f5ef");
   const [theme, setTheme] =
     useState<(typeof artworkThemes)[number]["id"]>("minimal");
+  const [layout, setLayout] =
+    useState<(typeof imageLayouts)[number]["id"]>("classic");
+  const [mood, setMood] =
+    useState<(typeof sceneMoods)[number]["id"]>("daybreak");
   const [loading, setLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [downloaded, setDownloaded] = useState(false);
@@ -69,6 +111,8 @@ export default function VerseImageGeneratorPage() {
           backgroundColor: bgColor,
           textColor,
           theme,
+          layout,
+          mood,
         }),
       });
 
@@ -124,6 +168,8 @@ export default function VerseImageGeneratorPage() {
         verse,
         reference,
         theme,
+        layout,
+        mood,
         bgColor,
         textColor,
         imageUrl: dataUrl,
@@ -152,6 +198,8 @@ export default function VerseImageGeneratorPage() {
       bg: bgColor,
       text: textColor,
       theme,
+      layout,
+      mood,
     });
     window.location.href = `/share/verse?${params.toString()}`;
   }
@@ -365,6 +413,44 @@ export default function VerseImageGeneratorPage() {
             ))}
           </div>
 
+          <div className="content-section-heading">
+            <p className="eyebrow">Picture mode</p>
+            <h2>Choose the composition style</h2>
+          </div>
+
+          <div className="verse-layout-grid">
+            {imageLayouts.map((imageLayout) => (
+              <button
+                key={imageLayout.id}
+                type="button"
+                onClick={() => setLayout(imageLayout.id)}
+                className={`verse-layout-card${layout === imageLayout.id ? " verse-layout-card-active" : ""}`}
+              >
+                <strong>{imageLayout.name}</strong>
+                <p>{imageLayout.detail}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="content-section-heading">
+            <p className="eyebrow">Scene mood</p>
+            <h2>Set the atmosphere around the verse</h2>
+          </div>
+
+          <div className="verse-layout-grid">
+            {sceneMoods.map((sceneMood) => (
+              <button
+                key={sceneMood.id}
+                type="button"
+                onClick={() => setMood(sceneMood.id)}
+                className={`verse-layout-card${mood === sceneMood.id ? " verse-layout-card-active" : ""}`}
+              >
+                <strong>{sceneMood.name}</strong>
+                <p>{sceneMood.detail}</p>
+              </button>
+            ))}
+          </div>
+
           <div className="content-actions">
             <button
               onClick={() => void handleGenerateImage()}
@@ -469,8 +555,9 @@ export default function VerseImageGeneratorPage() {
           <div className="content-card-note">
             <strong>Artwork mode:</strong>
             <p>
-              Switch from a minimal verse card to biblical-themed illustrated
-              scenes like desert, shepherd, dove, cross, and mountain.
+              Switch from a clean verse card to richer picture-style biblical
+              scenes, then shape the composition and atmosphere with layout and
+              scene mood controls.
             </p>
           </div>
         </section>
