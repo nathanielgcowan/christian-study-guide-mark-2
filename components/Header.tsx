@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Menu, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 
 const primaryLinks = [
   { href: "/bible", label: "Bible" },
@@ -110,6 +110,17 @@ export default function Header() {
           </nav>
 
           <div className="site-header-actions" aria-label="Quick actions">
+            <Link
+              href="/search"
+              onClick={() => setMenuOpen(false)}
+              className={`button-secondary button-small${
+                pathname === "/search" ? " is-active" : ""
+              }`}
+              aria-label="Search the website"
+            >
+              <Search size={16} />
+              <span>Search</span>
+            </Link>
             <Link
               href="/dashboard"
               onClick={() => setMenuOpen(false)}
