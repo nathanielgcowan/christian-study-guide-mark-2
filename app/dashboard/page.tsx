@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowRight,
   BellRing,
   BookOpenText,
   BookMarked,
@@ -10,6 +11,8 @@ import {
   Flame,
   HeartHandshake,
   NotebookPen,
+  Plus,
+  CheckCheck,
   Sparkles,
   UsersRound,
   WandSparkles,
@@ -87,6 +90,30 @@ interface DashboardRecommendation {
   cta: string;
 }
 
+interface NoteItem {
+  id: string;
+  reference: string;
+  content: string;
+  noteType: string;
+  color: string;
+  updatedAt: string;
+  tags: string[];
+}
+
+interface UserPlanProgress {
+  plan_id: string;
+  current_day: number;
+  completed: boolean;
+  completed_at: string | null;
+  updated_at?: string | null;
+}
+
+interface DashboardActionState {
+  note: string | null;
+  prayer: string | null;
+  plan: string | null;
+}
+
 function getDisplayName(session: {
   user: {
     email?: string | null;
@@ -142,6 +169,71 @@ const goalCopy = {
   },
 } as const;
 
+const readingPlanCatalog: Record<
+  string,
+  { title: string; duration: string; difficulty: string; days: number }
+> = {
+  "new-testament-30-days": {
+    title: "New Testament in 30 Days",
+    duration: "30 days",
+    difficulty: "Beginner",
+    days: 30,
+  },
+  "psalms-wisdom": {
+    title: "Psalms & Wisdom Literature",
+    duration: "21 days",
+    difficulty: "Intermediate",
+    days: 21,
+  },
+  "gospel-jesus": {
+    title: "The Life of Jesus",
+    duration: "14 days",
+    difficulty: "Beginner",
+    days: 14,
+  },
+  "old-testament-overview": {
+    title: "Old Testament Overview",
+    duration: "90 days",
+    difficulty: "Advanced",
+    days: 90,
+  },
+  "epistles-paul": {
+    title: "Paul's Letters",
+    duration: "45 days",
+    difficulty: "Intermediate",
+    days: 45,
+  },
+  "daily-psalms": {
+    title: "Daily Psalms",
+    duration: "30 days",
+    difficulty: "Beginner",
+    days: 30,
+  },
+};
+
+const quickLinks = [
+  {
+    title: "Open Bible reader",
+    body: "Jump straight into the next chapter without losing momentum.",
+    href: "/bible",
+  },
+  {
+    title: "Capture a note",
+    body: "Save an observation, question, or application while it is fresh.",
+    href: "/journal",
+  },
+  {
+    title: "Compare translations",
+    body: "Use the comparison view when a verse needs closer attention.",
+    href: "/verse-comparison",
+  },
+  {
+    title: "Review prayer requests",
+    body: "Keep prayer follow-up near the rest of your study rhythm.",
+    href: "/user/prayer-requests",
+  },
+];
+
 function formatDateLabel(value: string | null | undefined) {
   if (!value) return "recently";
   return new Date(value).toLocaleDateString();
@@ -163,6 +255,18 @@ export default function DashboardPage() {
     dailyDevotional: false,
     prayerUpdates: false,
     newsletter: false,
+  });
+  const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [readingPlans, setReadingPlans] = useState<UserPlanProgress[]>([]);
+  const [quickNoteReference, setQuickNoteReference] = useState("John 3:16");
+  const [quickNoteContent, setQuickNoteContent] = useState("");
+  const [savingQuickNote, setSavingQuickNote] = useState(false);
+  const [updatingPrayerId, setUpdatingPrayerId] = useState<string | null>(null);
+  const [updatingPlanId, setUpdatingPlanId] = useState<string | null>(null);
+  const [actionStatus, setActionStatus] = useState<DashboardActionState>({
+    note: null,
+    prayer: null,
+    plan: null,
   });
 
   useEffect(() => {
@@ -189,6 +293,8 @@ export default function DashboardPage() {
         studiesResponse,
         readingProgressResponse,
         emailPrefsResponse,
+        notesResponse,
+        readingPlansResponse,
       ] =
         await Promise.all([
           fetch("/api/user/profile"),
@@ -198,6 +304,8 @@ export default function DashboardPage() {
           fetch("/api/user/studies"),
           fetch("/api/user/reading-progress"),
           fetch("/api/user/email-prefs"),
+          fetch("/api/user/notes"),
+          fetch("/api/user/reading-plans"),
         ]);
 
       if (profileResponse.ok) {
@@ -242,6 +350,18 @@ export default function DashboardPage() {
       if (emailPrefsResponse.ok) {
         const data = (await emailPrefsResponse.json()) as { emailPrefs: EmailPrefs };
         setEmailPrefs(data.emailPrefs);
+      }
+
+      if (notesResponse.ok) {
+        const data = (await notesResponse.json()) as { notes: NoteItem[] };
+        setNotes(data.notes);
+      }
+
+      if (readingPlansResponse.ok) {
+        const data = (await readingPlansResponse.json()) as {
+          plans: UserPlanProgress[];
+        };
+        setReadingPlans(data.plans);
       }
 
       setLoading(false);
@@ -448,6 +568,191 @@ export default function DashboardPage() {
     return items.slice(0, 3);
   }, [bookmarks.length, emailPrefs.dailyDevotional, emailPrefs.prayerUpdates, prayerRequests.length, preferences.focusGoal, studySummaryData?.current_streak]);
 
+  const activePlan = useMemo(() => {
+    const nextPlan = [...readingPlans]
+      .filter((plan) => !plan.completed)
+      .sort((left, right) => {
+        const leftDate = new Date(left.updated_at ?? 0).getTime();
+        const rightDate = new Date(right.updated_at ?? 0).getTime();
+        return rightDate - leftDate;
+      })[0];
+
+    if (!nextPlan) {
+      return null;
+    }
+
+      return {
+        ...nextPlan,
+        meta: readingPlanCatalog[nextPlan.plan_id] ?? {
+          title: nextPlan.plan_id,
+          duration: "Structured plan",
+          difficulty: "Guided",
+          days: Math.max(nextPlan.current_day, 1),
+        },
+      };
+  }, [readingPlans]);
+
+  const completedPlansCount = useMemo(
+    () => readingPlans.filter((plan) => plan.completed).length,
+    [readingPlans],
+  );
+
+  const studyMomentumLabel = useMemo(() => {
+    const streak = studySummaryData?.current_streak ?? 0;
+    if (streak >= 14) return "Strong momentum";
+    if (streak >= 5) return "Healthy rhythm";
+    if (streak >= 1) return "Momentum building";
+    return "Fresh start";
+  }, [studySummaryData?.current_streak]);
+
+  const suggestedPlans = useMemo(() => {
+    const enrolled = new Set(readingPlans.map((plan) => plan.plan_id));
+    return Object.entries(readingPlanCatalog)
+      .filter(([planId]) => !enrolled.has(planId))
+      .slice(0, 3)
+      .map(([planId, meta]) => ({ planId, ...meta }));
+  }, [readingPlans]);
+
+  const activePrayerRequests = useMemo(
+    () => prayerRequests.filter((request) => request.status !== "answered").slice(0, 3),
+    [prayerRequests],
+  );
+
+  async function handleQuickNoteSave(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!quickNoteReference.trim() || !quickNoteContent.trim()) {
+      setActionStatus((current) => ({
+        ...current,
+        note: "Reference and note content are required.",
+      }));
+      return;
+    }
+
+    setSavingQuickNote(true);
+    setActionStatus((current) => ({ ...current, note: null }));
+
+    const response = await fetch("/api/user/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference: quickNoteReference.trim(),
+        content: quickNoteContent.trim(),
+        noteType: "note",
+      }),
+    });
+
+    setSavingQuickNote(false);
+
+    if (!response.ok) {
+      setActionStatus((current) => ({
+        ...current,
+        note: "Could not save the note right now.",
+      }));
+      return;
+    }
+
+    const note = (await response.json()) as NoteItem;
+    setNotes((current) => [note, ...current]);
+    setQuickNoteContent("");
+    setActionStatus((current) => ({
+      ...current,
+      note: "Note saved to your study workspace.",
+    }));
+  }
+
+  async function handleMarkPrayerAnswered(id: string) {
+    setUpdatingPrayerId(id);
+    setActionStatus((current) => ({ ...current, prayer: null }));
+
+    const response = await fetch("/api/user/prayer-requests", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, answered: true }),
+    });
+
+    setUpdatingPrayerId(null);
+
+    if (!response.ok) {
+      setActionStatus((current) => ({
+        ...current,
+        prayer: "Could not update that prayer request right now.",
+      }));
+      return;
+    }
+
+    const data = (await response.json()) as { prayerRequest: PrayerRequestItem };
+    setPrayerRequests((current) =>
+      current.map((item) => (item.id === id ? data.prayerRequest : item)),
+    );
+    setActionStatus((current) => ({
+      ...current,
+      prayer: "Prayer request marked as answered.",
+    }));
+  }
+
+  async function handleStartPlan(planId: string) {
+    setUpdatingPlanId(planId);
+    setActionStatus((current) => ({ ...current, plan: null }));
+
+    const response = await fetch("/api/user/reading-plans", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId }),
+    });
+
+    setUpdatingPlanId(null);
+
+    if (!response.ok) {
+      setActionStatus((current) => ({
+        ...current,
+        plan: "Could not start that reading plan right now.",
+      }));
+      return;
+    }
+
+    const data = (await response.json()) as { plan: UserPlanProgress };
+    setReadingPlans((current) => [data.plan, ...current.filter((item) => item.plan_id !== planId)]);
+    setActionStatus((current) => ({
+      ...current,
+      plan: "Reading plan started.",
+    }));
+  }
+
+  async function handleAdvancePlan(planId: string, currentDay: number, completed = false) {
+    setUpdatingPlanId(planId);
+    setActionStatus((current) => ({ ...current, plan: null }));
+
+    const response = await fetch(`/api/user/reading-plans/${planId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentDay,
+        completed,
+      }),
+    });
+
+    setUpdatingPlanId(null);
+
+    if (!response.ok) {
+      setActionStatus((current) => ({
+        ...current,
+        plan: "Could not update that plan right now.",
+      }));
+      return;
+    }
+
+    const data = (await response.json()) as { plan: UserPlanProgress };
+    setReadingPlans((current) =>
+      current.map((item) => (item.plan_id === planId ? data.plan : item)),
+    );
+    setActionStatus((current) => ({
+      ...current,
+      plan: completed
+        ? "Reading plan marked complete."
+        : `Advanced to day ${data.plan.current_day}.`,
+    }));
+  }
+
   if (loading) {
     return (
       <main className="minimal-shell">
@@ -487,6 +792,7 @@ export default function DashboardPage() {
         </p>
         <div className="content-chip-row">
           <span className="content-chip">{goalPanel.title}</span>
+          <span className="content-chip">{studyMomentumLabel}</span>
           <span className="content-chip">Goal: {preferences.focusGoal}</span>
           <span className="content-chip">
             Translation: {preferences.preferredTranslation.toUpperCase()}
@@ -494,6 +800,123 @@ export default function DashboardPage() {
           <span className="content-chip">
             Target: {preferences.dailyTargetMinutes} minutes
           </span>
+        </div>
+      </section>
+
+      <section className="content-section-card content-stack">
+        <div className="content-section-heading">
+          <p className="eyebrow">Quick launch</p>
+          <h2>Open the part of the workspace you need most</h2>
+        </div>
+        <div className="content-grid-three">
+          {quickLinks.map((item) => (
+            <article key={item.title} className="content-card">
+              <h3 className="content-card-title">{item.title}</h3>
+              <p>{item.body}</p>
+              <Link href={item.href} className="button-secondary">
+                Open
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="content-section-card content-stack">
+        <div className="content-section-heading">
+          <p className="eyebrow">Action center</p>
+          <h2>Take the next step without leaving the dashboard</h2>
+        </div>
+        <div className="content-grid-three">
+          <form onSubmit={handleQuickNoteSave} className="content-card">
+            <span className="content-badge">
+              <NotebookPen size={14} />
+              Quick note
+            </span>
+            <h3 className="content-card-title">Capture one study insight</h3>
+            <div className="minimal-form-grid">
+              <input
+                value={quickNoteReference}
+                onChange={(event) => setQuickNoteReference(event.target.value)}
+                className="minimal-input"
+                placeholder="Reference"
+              />
+              <textarea
+                value={quickNoteContent}
+                onChange={(event) => setQuickNoteContent(event.target.value)}
+                className="minimal-textarea"
+                rows={5}
+                placeholder="Write an observation, question, or application."
+              />
+            </div>
+            <button type="submit" disabled={savingQuickNote} className="button-primary">
+              {savingQuickNote ? "Saving..." : "Save note"}
+            </button>
+            {actionStatus.note ? <p className="share-status">{actionStatus.note}</p> : null}
+          </form>
+
+          <section className="content-card">
+            <span className="content-badge">
+              <CheckCheck size={14} />
+              Prayer follow-up
+            </span>
+            <h3 className="content-card-title">Mark answered requests</h3>
+            {activePrayerRequests.length > 0 ? (
+              <div className="content-stack">
+                {activePrayerRequests.map((request) => (
+                  <div key={request.id} className="content-card-note">
+                    <strong>{request.title}</strong>
+                    {request.description ? <p>{request.description}</p> : null}
+                    <button
+                      type="button"
+                      onClick={() => void handleMarkPrayerAnswered(request.id)}
+                      disabled={updatingPrayerId === request.id}
+                      className="button-secondary"
+                    >
+                      {updatingPrayerId === request.id ? "Updating..." : "Mark answered"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="content-card-note">
+                No active prayer requests are waiting here right now.
+              </div>
+            )}
+            {actionStatus.prayer ? <p className="share-status">{actionStatus.prayer}</p> : null}
+          </section>
+
+          <section className="content-card">
+            <span className="content-badge">
+              <Plus size={14} />
+              Start a plan
+            </span>
+            <h3 className="content-card-title">Begin a guided reading path</h3>
+            {suggestedPlans.length > 0 ? (
+              <div className="content-stack">
+                {suggestedPlans.map((plan) => (
+                  <div key={plan.planId} className="content-card-note">
+                    <strong>{plan.title}</strong>
+                    <p>
+                      {plan.duration} · {plan.difficulty}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void handleStartPlan(plan.planId)}
+                      disabled={updatingPlanId === plan.planId}
+                      className="button-secondary"
+                    >
+                      {updatingPlanId === plan.planId ? "Starting..." : "Start plan"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="content-card-note">
+                You are already enrolled in the available starter plans. Keep going or build a custom path.
+              </div>
+            )}
+            {actionStatus.plan ? <p className="share-status">{actionStatus.plan}</p> : null}
+          </section>
         </div>
       </section>
 
@@ -529,11 +952,11 @@ export default function DashboardPage() {
             <h2>What your recent rhythm shows</h2>
           </div>
           <div className="content-card-note">
-            <strong>
-              {studySummaryData?.current_streak ?? 0}-day streak with{" "}
-              {studySummaryData?.total_studies ?? 0} total study session
-              {studySummaryData?.total_studies === 1 ? "" : "s"}.
-            </strong>
+              <strong>
+                {studySummaryData?.current_streak ?? 0}-day streak with{" "}
+                {studySummaryData?.total_studies ?? 0} total study session
+                {studySummaryData?.total_studies === 1 ? "" : "s"}.
+              </strong>
             <p>
               Best streak: {studySummaryData?.best_streak ?? 0}. Recent study
               activity and prayer follow-up help shape what appears next here.
@@ -579,6 +1002,80 @@ export default function DashboardPage() {
       ) : null}
 
       <section className="content-grid-two">
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Reading plans</p>
+            <h2>Your structured path</h2>
+          </div>
+          {activePlan ? (
+            <div className="content-stack">
+              <div className="content-card-note">
+                <strong>{activePlan.meta.title}</strong>
+                <p>
+                  Day {activePlan.current_day} in progress · {activePlan.meta.duration} ·{" "}
+                  {activePlan.meta.difficulty}
+                </p>
+                <p>Last touched {formatDateLabel(activePlan.updated_at)}</p>
+              </div>
+              <div className="content-chip-row">
+                <span className="content-chip">
+                  {readingPlans.length} enrolled plan
+                  {readingPlans.length === 1 ? "" : "s"}
+                </span>
+                <span className="content-chip">
+                  {completedPlansCount} completed
+                </span>
+              </div>
+              <div className="content-actions">
+                <Link href="/reading-plans" className="button-primary">
+                  Continue plans
+                </Link>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void handleAdvancePlan(
+                      activePlan.plan_id,
+                      Math.min(activePlan.current_day + 1, activePlan.meta.days),
+                      false,
+                    )
+                  }
+                  disabled={updatingPlanId === activePlan.plan_id}
+                  className="button-secondary"
+                >
+                  {updatingPlanId === activePlan.plan_id ? "Updating..." : "Advance one day"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void handleAdvancePlan(activePlan.plan_id, activePlan.current_day, true)
+                  }
+                  disabled={updatingPlanId === activePlan.plan_id}
+                  className="button-secondary"
+                >
+                  Complete plan
+                </button>
+                <Link href="/reading-plans/custom" className="button-secondary">
+                  Build custom plan
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="content-stack">
+              <div className="content-card-note">
+                Start a guided plan and the dashboard will keep your current path visible here.
+              </div>
+              <div className="content-actions">
+                <Link href="/reading-plans" className="button-primary">
+                  Browse plans
+                </Link>
+                <Link href="/reading-plans/custom" className="button-secondary">
+                  Create custom plan
+                </Link>
+              </div>
+            </div>
+          )}
+        </section>
+
         <section className="content-card">
           <div className="content-section-heading">
             <p className="eyebrow">Resume reading</p>
@@ -675,6 +1172,41 @@ export default function DashboardPage() {
             </Link>
           </section>
         ) : null}
+      </section>
+
+      <section className="content-grid-two">
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Notes</p>
+            <h2>Your recent study workspace</h2>
+          </div>
+          {notes.length > 0 ? (
+            <div className="content-stack">
+              {notes.slice(0, 3).map((note) => (
+                <div key={note.id} className="content-card-note">
+                  <strong>{note.reference}</strong>
+                  <p>{note.content}</p>
+                  <p>
+                    {note.noteType} · Updated {formatDateLabel(note.updatedAt)}
+                  </p>
+                  {note.tags.length > 0 ? <p>Tags: {note.tags.join(", ")}</p> : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="content-card-note">
+              Save notes from your reading and passage study pages to build a searchable record here.
+            </div>
+          )}
+          <div className="content-actions">
+            <Link href="/journal" className="button-primary">
+              Open journal
+            </Link>
+            <Link href="/passage/John%203%3A16" className="button-secondary">
+              Open passage workspace
+            </Link>
+          </div>
+        </section>
 
         {preferences.visibleWidgets.emailPreferences ? (
           <section className="content-card">
@@ -718,6 +1250,14 @@ export default function DashboardPage() {
               </Link>
             </article>
           ))}
+        </div>
+        <div className="content-actions">
+          <Link href="/user/settings" className="button-secondary">
+            Personalize this dashboard
+          </Link>
+          <Link href="/onboarding" className="button-secondary">
+            Revisit onboarding
+          </Link>
         </div>
       </section>
 
@@ -798,6 +1338,20 @@ export default function DashboardPage() {
             </p>
             <Link href="/admin/content" className="button-secondary">
               Open CMS
+            </Link>
+          </article>
+          <article className="content-card">
+            <span className="content-badge">
+              <ArrowRight size={14} />
+              Workspace
+            </span>
+            <h3 className="content-card-title">Deepen your daily flow</h3>
+            <p>
+              Move between reading, notes, bookmarks, and prayer without leaving
+              your personal command center behind.
+            </p>
+            <Link href="/dashboard" className="button-secondary">
+              Stay on dashboard
             </Link>
           </article>
         </div>

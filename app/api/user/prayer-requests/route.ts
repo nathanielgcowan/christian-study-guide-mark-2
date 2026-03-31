@@ -152,3 +152,59 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id, answered }: { id?: string; answered?: boolean } = await request.json();
+
+    if (!id || answered === undefined) {
+      return NextResponse.json(
+        { error: "Prayer request id and answered state are required" },
+        { status: 400 },
+      );
+    }
+
+    const supabase = await createClient();
+    const profileError = await ensureUserProfile(supabase, user);
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from("prayer_requests")
+      .update({
+        answered,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .select("id,title,content,answered,updated_at,created_at,is_public")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      prayerRequest: {
+        id: data.id,
+        title: data.title,
+        description: data.content,
+        status: data.answered ? "answered" : "active",
+        updatedAt: data.updated_at ?? data.created_at,
+        createdAt: data.created_at,
+        isPublic: data.is_public ?? true,
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
