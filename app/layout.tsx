@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import SkipToMain from "@/components/SkipToMain";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const sans = Manrope({
   variable: "--font-sans",
@@ -66,6 +67,9 @@ export default function RootLayout({
           </div>
         </Providers>
         <Analytics />
+        <GoogleAnalytics
+          measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ""}
+        />
       </body>
     </html>
   );
