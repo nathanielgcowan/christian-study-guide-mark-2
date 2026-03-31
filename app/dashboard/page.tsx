@@ -7,7 +7,9 @@ import {
   BookOpenText,
   BookMarked,
   Clock3,
+  Flame,
   HeartHandshake,
+  NotebookPen,
   Sparkles,
   UsersRound,
   WandSparkles,
@@ -40,14 +42,23 @@ interface PrayerRequestItem {
   description: string | null;
   status: string;
   updatedAt: string;
+  isPublic?: boolean;
 }
 
-interface StudySummary {
+interface StudyStreak {
   streak: {
     current_streak: number;
     best_streak: number;
     total_studies: number;
   } | null;
+  recentStudies: Array<{
+    id: string;
+    reference: string;
+    translation: string;
+    read_at: string;
+    time_spent_minutes: number;
+    completed: boolean;
+  }>;
 }
 
 interface ReadingProgress {
@@ -61,6 +72,19 @@ interface ReadingProgress {
     totalChapters: number;
     percentComplete: number;
   };
+}
+
+interface EmailPrefs {
+  dailyDevotional: boolean;
+  prayerUpdates: boolean;
+  newsletter: boolean;
+}
+
+interface DashboardRecommendation {
+  title: string;
+  body: string;
+  href: string;
+  cta: string;
 }
 
 function getDisplayName(session: {
@@ -99,6 +123,30 @@ const defaultPreferences: Preferences = {
   },
 };
 
+const goalCopy = {
+  consistency: {
+    title: "Build a steady rhythm",
+    lead: "Small faithful steps add up when the next action is obvious.",
+  },
+  depth: {
+    title: "Go deeper today",
+    lead: "Use the dashboard to move from reading into richer reflection and study.",
+  },
+  prayer: {
+    title: "Keep prayer close",
+    lead: "Let Scripture, requests, and follow-up stay in one calmer flow.",
+  },
+  memory: {
+    title: "Hold onto what you read",
+    lead: "A good dashboard keeps key passages within reach for review and repetition.",
+  },
+} as const;
+
+function formatDateLabel(value: string | null | undefined) {
+  if (!value) return "recently";
+  return new Date(value).toLocaleDateString();
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
@@ -106,10 +154,16 @@ export default function DashboardPage() {
   const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [prayerRequests, setPrayerRequests] = useState<PrayerRequestItem[]>([]);
-  const [studySummaryData, setStudySummaryData] = useState<StudySummary["streak"]>(
+  const [studySummaryData, setStudySummaryData] = useState<StudyStreak["streak"]>(
     null,
   );
+  const [recentStudies, setRecentStudies] = useState<StudyStreak["recentStudies"]>([]);
   const [readingProgress, setReadingProgress] = useState<ReadingProgress | null>(null);
+  const [emailPrefs, setEmailPrefs] = useState<EmailPrefs>({
+    dailyDevotional: false,
+    prayerUpdates: false,
+    newsletter: false,
+  });
 
   useEffect(() => {
     async function loadDashboard() {
@@ -134,14 +188,16 @@ export default function DashboardPage() {
         prayersResponse,
         studiesResponse,
         readingProgressResponse,
+        emailPrefsResponse,
       ] =
         await Promise.all([
           fetch("/api/user/profile"),
           fetch("/api/user/preferences"),
           fetch("/api/user/bookmarks"),
-          fetch("/api/user/prayer-requests"),
+          fetch("/api/user/prayer-requests?scope=mine"),
           fetch("/api/user/studies"),
           fetch("/api/user/reading-progress"),
+          fetch("/api/user/email-prefs"),
         ]);
 
       if (profileResponse.ok) {
@@ -171,8 +227,9 @@ export default function DashboardPage() {
       }
 
       if (studiesResponse.ok) {
-        const data = (await studiesResponse.json()) as StudySummary;
+        const data = (await studiesResponse.json()) as StudyStreak;
         setStudySummaryData(data.streak);
+        setRecentStudies(data.recentStudies ?? []);
       }
 
       if (readingProgressResponse.ok) {
@@ -180,6 +237,11 @@ export default function DashboardPage() {
           readingProgress: ReadingProgress;
         };
         setReadingProgress(data.readingProgress);
+      }
+
+      if (emailPrefsResponse.ok) {
+        const data = (await emailPrefsResponse.json()) as { emailPrefs: EmailPrefs };
+        setEmailPrefs(data.emailPrefs);
       }
 
       setLoading(false);
@@ -192,6 +254,10 @@ export default function DashboardPage() {
     const activePrayers = prayerRequests.filter(
       (request) => request.status !== "answered",
     ).length;
+    const studiedMinutes = recentStudies.reduce(
+      (total, study) => total + (study.time_spent_minutes || 0),
+      0,
+    );
 
     return [
       {
@@ -212,20 +278,175 @@ export default function DashboardPage() {
       {
         label: "Current streak",
         value: studySummaryData?.current_streak ?? 0,
-        icon: Sparkles,
+        icon: Flame,
       },
       {
         label: "Open requests",
         value: activePrayers,
         icon: Sparkles,
       },
+      {
+        label: "Recent minutes",
+        value: studiedMinutes,
+        icon: NotebookPen,
+      },
     ];
   }, [
     bookmarks.length,
     prayerRequests,
+    recentStudies,
     preferences.dailyTargetMinutes,
     studySummaryData?.current_streak,
   ]);
+
+  const todayFocus = useMemo(() => {
+    const openPrayerCount = prayerRequests.filter(
+      (request) => request.status !== "answered",
+    ).length;
+
+    const focusByGoal: Record<Preferences["focusGoal"], string> = {
+      consistency: readingProgress
+        ? `Resume ${readingProgress.reference} and protect your ${preferences.dailyTargetMinutes}-minute habit.`
+        : `Start a short reading session and aim for ${preferences.dailyTargetMinutes} focused minutes.`,
+      depth: readingProgress
+        ? `Return to ${readingProgress.reference}, then move into comparison, notes, or passage study.`
+        : "Open a passage study and spend time connecting context, cross references, and application.",
+      prayer:
+        openPrayerCount > 0
+          ? `You have ${openPrayerCount} open prayer request${openPrayerCount === 1 ? "" : "s"} waiting for follow-up today.`
+          : "Write one prayer after your reading so the habit stays personal, not only informational.",
+      memory:
+        bookmarks.length > 0
+          ? `Revisit one saved passage and choose a verse worth carrying into the rest of the day.`
+          : "Bookmark one verse from today’s reading so memory work has a clear starting place.",
+    };
+
+    return focusByGoal[preferences.focusGoal as keyof typeof focusByGoal] ??
+      focusByGoal.consistency;
+  }, [bookmarks.length, preferences.dailyTargetMinutes, preferences.focusGoal, prayerRequests, readingProgress]);
+
+  const nextSteps = useMemo(() => {
+    const steps = [];
+
+    if (readingProgress) {
+      steps.push({
+        title: "Resume your reading place",
+        body: `${readingProgress.reference} is your last saved chapter in ${readingProgress.translation.toUpperCase()}.`,
+        href: `/bible/${encodeURIComponent(readingProgress.book)}/${readingProgress.chapter}`,
+        cta: "Continue reading",
+      });
+    } else {
+      steps.push({
+        title: "Start your next reading session",
+        body: "Open the Bible reader and your dashboard will begin tracking where you left off.",
+        href: "/bible",
+        cta: "Open Bible reader",
+      });
+    }
+
+    if (preferences.focusGoal === "prayer") {
+      steps.push({
+        title: "Keep prayer near your study",
+        body: prayerRequests.length
+          ? "Review your active requests and mark one for follow-up after reading."
+          : "Add one personal request so prayer remains part of your daily rhythm.",
+        href: "/user/prayer-requests",
+        cta: prayerRequests.length ? "Review requests" : "Add a request",
+      });
+    } else if (preferences.focusGoal === "memory") {
+      steps.push({
+        title: "Choose a verse to keep",
+        body: bookmarks.length
+          ? "Turn one saved passage into a memorization or reflection touchpoint."
+          : "Save one meaningful passage today so repetition has a clear anchor.",
+        href: bookmarks.length ? "/user/bookmarks" : "/verse-comparison",
+        cta: bookmarks.length ? "Open bookmarks" : "Compare and save",
+      });
+    } else if (preferences.focusGoal === "depth") {
+      steps.push({
+        title: "Move from reading into study",
+        body: "Use the deeper passage workspace when a chapter deserves more than a quick skim.",
+        href: "/passage/John%203%3A16",
+        cta: "Open passage study",
+      });
+    } else {
+      steps.push({
+        title: "Choose a plan that fits your pace",
+        body: `Your target is ${preferences.dailyTargetMinutes} minutes, which pairs well with a structured reading path.`,
+        href: "/reading-plans",
+        cta: "Browse plans",
+      });
+    }
+
+    steps.push({
+      title: "Tune your dashboard",
+      body: "Adjust your focus goal, preferred translation, and visible widgets whenever your rhythm changes.",
+      href: "/user/settings",
+      cta: "Update settings",
+    });
+
+    return steps;
+  }, [bookmarks.length, preferences.dailyTargetMinutes, preferences.focusGoal, prayerRequests.length, readingProgress]);
+
+  const recommendations = useMemo<DashboardRecommendation[]>(() => {
+    const items: DashboardRecommendation[] = [];
+
+    if ((studySummaryData?.current_streak ?? 0) < 3) {
+      items.push({
+        title: "Make today easy to repeat",
+        body: "Short, repeatable sessions tend to rebuild momentum faster than ambitious one-off study bursts.",
+        href: "/reading-plans",
+        cta: "Open reading plans",
+      });
+    }
+
+    if (bookmarks.length === 0) {
+      items.push({
+        title: "Save what you want to revisit",
+        body: "A personalized dashboard gets stronger when key verses and passages have somewhere to live.",
+        href: "/verse-comparison",
+        cta: "Save a passage",
+      });
+    }
+
+    if (preferences.focusGoal === "depth") {
+      items.push({
+        title: "Use the richer study workflow",
+        body: "Comparison, notes, and passage context are the fastest way to turn reading into deeper understanding.",
+        href: "/passage/John%203%3A16",
+        cta: "Open passage study",
+      });
+    }
+
+    if (preferences.focusGoal === "prayer" || prayerRequests.length === 0) {
+      items.push({
+        title: "Keep your prayer rhythm visible",
+        body: "A personal dashboard works best when requests stay close to reading and follow-up, not hidden in another page.",
+        href: "/user/prayer-requests",
+        cta: "Open prayer requests",
+      });
+    }
+
+    if (!emailPrefs.dailyDevotional || !emailPrefs.prayerUpdates) {
+      items.push({
+        title: "Turn on only the reminders that help",
+        body: "Devotional and prayer updates can support consistency without turning your inbox into noise.",
+        href: "/user/settings",
+        cta: "Manage reminders",
+      });
+    }
+
+    if (items.length < 3) {
+      items.push({
+        title: "Create shareable Scripture",
+        body: "A verse image can turn a meaningful passage into something you revisit, keep, or share with others.",
+        href: "/user/verse-generator",
+        cta: "Open verse studio",
+      });
+    }
+
+    return items.slice(0, 3);
+  }, [bookmarks.length, emailPrefs.dailyDevotional, emailPrefs.prayerUpdates, prayerRequests.length, preferences.focusGoal, studySummaryData?.current_streak]);
 
   if (loading) {
     return (
@@ -252,16 +473,20 @@ export default function DashboardPage() {
     );
   }
 
+  const goalPanel = goalCopy[
+    (preferences.focusGoal as keyof typeof goalCopy) ?? "consistency"
+  ] ?? goalCopy.consistency;
+
   return (
     <main id="main-content" className="page-shell content-shell content-stack">
       <section className="content-hero">
         <p className="eyebrow">Personal dashboard</p>
         <h1>{name}, here is your study rhythm for today.</h1>
         <p className="content-lead">
-          Your dashboard now adapts to your focus goal, preferred translation,
-          and the study widgets you want to keep visible.
+          {goalPanel.lead}
         </p>
         <div className="content-chip-row">
+          <span className="content-chip">{goalPanel.title}</span>
           <span className="content-chip">Goal: {preferences.focusGoal}</span>
           <span className="content-chip">
             Translation: {preferences.preferredTranslation.toUpperCase()}
@@ -270,6 +495,73 @@ export default function DashboardPage() {
             Target: {preferences.dailyTargetMinutes} minutes
           </span>
         </div>
+      </section>
+
+      <section className="content-grid-two">
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Today</p>
+            <h2>Your next faithful step</h2>
+          </div>
+          <div className="content-card-note">
+            <strong>{todayFocus}</strong>
+            <p>
+              The dashboard is now prioritizing your {preferences.focusGoal} goal
+              instead of showing the same generic entry points every time.
+            </p>
+          </div>
+          <div className="content-stack">
+            {nextSteps.map((step) => (
+              <div key={step.title} className="content-card-note">
+                <strong>{step.title}</strong>
+                <p>{step.body}</p>
+                <Link href={step.href} className="button-secondary">
+                  {step.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Momentum</p>
+            <h2>What your recent rhythm shows</h2>
+          </div>
+          <div className="content-card-note">
+            <strong>
+              {studySummaryData?.current_streak ?? 0}-day streak with{" "}
+              {studySummaryData?.total_studies ?? 0} total study session
+              {studySummaryData?.total_studies === 1 ? "" : "s"}.
+            </strong>
+            <p>
+              Best streak: {studySummaryData?.best_streak ?? 0}. Recent study
+              activity and prayer follow-up help shape what appears next here.
+            </p>
+          </div>
+          {recentStudies.length > 0 ? (
+            <div className="content-stack">
+              {recentStudies.slice(0, 3).map((study) => (
+                <div key={study.id} className="content-card-note">
+                  <strong>{study.reference}</strong>
+                  <p>
+                    {study.translation.toUpperCase()} ·{" "}
+                    {study.time_spent_minutes > 0
+                      ? `${study.time_spent_minutes} minutes`
+                      : "study session logged"}{" "}
+                    · {study.completed ? "completed" : "in progress"}
+                  </p>
+                  <p>Logged {formatDateLabel(study.read_at)}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="content-card-note">
+              As you log reading and study sessions, this section will start surfacing
+              your recent momentum automatically.
+            </div>
+          )}
+        </section>
       </section>
 
       {preferences.visibleWidgets.studySummary ? (
@@ -302,9 +594,7 @@ export default function DashboardPage() {
                 </p>
                 <p>
                   Last saved{" "}
-                  {readingProgress.updatedAt
-                    ? new Date(readingProgress.updatedAt).toLocaleDateString()
-                    : "recently"}
+                  {formatDateLabel(readingProgress.updatedAt)}
                 </p>
               </div>
               <div className="content-actions">
@@ -369,8 +659,9 @@ export default function DashboardPage() {
                     <strong>{request.title}</strong>
                     <p>
                       {request.status} · Updated{" "}
-                      {new Date(request.updatedAt).toLocaleDateString()}
+                      {formatDateLabel(request.updatedAt)}
                     </p>
+                    {request.description ? <p>{request.description}</p> : null}
                   </div>
                 ))}
               </div>
@@ -384,6 +675,32 @@ export default function DashboardPage() {
             </Link>
           </section>
         ) : null}
+
+        {preferences.visibleWidgets.emailPreferences ? (
+          <section className="content-card">
+            <div className="content-section-heading">
+              <p className="eyebrow">Reminders</p>
+              <h2>How your encouragement flow is set</h2>
+            </div>
+            <div className="content-stack">
+              <div className="content-card-note">
+                <strong>Daily devotional</strong>
+                <p>{emailPrefs.dailyDevotional ? "Enabled" : "Off for now"}</p>
+              </div>
+              <div className="content-card-note">
+                <strong>Prayer updates</strong>
+                <p>{emailPrefs.prayerUpdates ? "Enabled" : "Off for now"}</p>
+              </div>
+              <div className="content-card-note">
+                <strong>Newsletter</strong>
+                <p>{emailPrefs.newsletter ? "Enabled" : "Off for now"}</p>
+              </div>
+            </div>
+            <Link href="/user/settings" className="button-secondary">
+              Manage reminders
+            </Link>
+          </section>
+        ) : null}
       </section>
 
       <section className="content-section-card content-stack">
@@ -392,36 +709,15 @@ export default function DashboardPage() {
           <h2>Next steps based on your current setup</h2>
         </div>
         <div className="content-grid-three">
-          <article className="content-card">
-            <h3 className="content-card-title">Stay consistent</h3>
-            <p>
-              Open a reading plan that fits your daily target and build a steady
-              study cadence.
-            </p>
-            <Link href="/reading-plans" className="button-secondary">
-              Reading plans
-            </Link>
-          </article>
-          <article className="content-card">
-            <h3 className="content-card-title">Create shareable Scripture</h3>
-            <p>
-              Turn a meaningful verse into a simple share image for personal or
-              ministry use.
-            </p>
-            <Link href="/user/verse-generator" className="button-secondary">
-              Verse image studio
-            </Link>
-          </article>
-          <article className="content-card">
-            <h3 className="content-card-title">Tune your workspace</h3>
-            <p>
-              Adjust your dashboard goal, translation, and visible widgets in
-              settings.
-            </p>
-            <Link href="/user/settings" className="button-secondary">
-              Update settings
-            </Link>
-          </article>
+          {recommendations.map((item) => (
+            <article key={item.title} className="content-card">
+              <h3 className="content-card-title">{item.title}</h3>
+              <p>{item.body}</p>
+              <Link href={item.href} className="button-secondary">
+                {item.cta}
+              </Link>
+            </article>
+          ))}
         </div>
       </section>
 

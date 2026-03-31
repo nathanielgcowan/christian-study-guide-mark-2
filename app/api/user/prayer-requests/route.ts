@@ -22,9 +22,46 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const limit = Number.parseInt(searchParams.get("limit") ?? "20", 10);
   const offset = Number.parseInt(searchParams.get("offset") ?? "0", 10);
+  const scope = searchParams.get("scope");
 
   try {
     const supabase = await createClient();
+
+    if (scope === "mine") {
+      const user = await getCurrentUser();
+      if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const profileError = await ensureUserProfile(supabase, user);
+      if (profileError) {
+        return NextResponse.json({ error: profileError.message }, { status: 400 });
+      }
+
+      const { data, error } = await supabase
+        .from("prayer_requests")
+        .select("id,title,content,answered,updated_at,created_at,is_public")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .range(offset, offset + Math.max(limit - 1, 0));
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      const prayerRequests = (data ?? []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.content,
+        status: item.answered ? "answered" : "active",
+        updatedAt: item.updated_at ?? item.created_at,
+        createdAt: item.created_at,
+        isPublic: item.is_public ?? true,
+      }));
+
+      return NextResponse.json({ prayerRequests });
+    }
+
     const { data, error } = await supabase
       .from("prayer_requests")
       .select("id,title,content,replies_count,created_at,user_profiles(full_name,email)")
@@ -105,6 +142,8 @@ export async function POST(request: NextRequest) {
       description: data.content,
       prayerCount: data.replies_count ?? 0,
       createdAt: data.created_at,
+      status: data.answered ? "answered" : "active",
+      updatedAt: data.updated_at ?? data.created_at,
     });
   } catch {
     return NextResponse.json(
