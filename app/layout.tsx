@@ -24,6 +24,11 @@ export const metadata: Metadata = {
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000"),
   ),
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   title: {
     default: "Christian Study Guide",
     template: "%s | Christian Study Guide",

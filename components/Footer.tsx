@@ -5,6 +5,8 @@ const footerLinks = [
   { href: "/bible", label: "Bible" },
   { href: "/blog", label: "Blog" },
   { href: "/search", label: "Search" },
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy" },
 ];
 
 export default function Footer() {
