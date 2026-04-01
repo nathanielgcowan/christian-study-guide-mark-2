@@ -130,15 +130,6 @@ export default function Header() {
             >
               Dashboard
             </Link>
-            <Link
-              href="/prayer-journal"
-              onClick={() => setMenuOpen(false)}
-              className={`button-secondary button-small${
-                pathname === "/prayer-journal" ? " is-active" : ""
-              }`}
-            >
-              Prayer Journal
-            </Link>
             {signedIn ? (
               <button
                 type="button"
