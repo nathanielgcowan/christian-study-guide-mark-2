@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BookOpenText, NotebookPen } from "lucide-react";
+import InArticleAd from "@/components/InArticleAd";
 import { devotionals, getDailyDevotional } from "@/lib/devotionals";
 
 export default async function DailyDevotionalsPage() {
@@ -111,6 +112,8 @@ export default async function DailyDevotionalsPage() {
               ))}
             </ul>
           </section>
+
+          <InArticleAd className="devotional-inline-ad" />
 
           <section className="devotional-section">
             <h3>Prayer</h3>

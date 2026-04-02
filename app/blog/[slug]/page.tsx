@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import InArticleAd from "../../../components/InArticleAd";
 import ClientSocialShare from "../../../components/ClientSocialShare";
 
 const posts = {
@@ -784,6 +785,8 @@ export default async function BlogPost({ params }: PageProps) {
             }}
           />
         </div>
+
+        <InArticleAd />
       </article>
     </main>
   );

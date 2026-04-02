@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Quando } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import AutoSyncClient from "@/components/AutoSyncClient";
@@ -61,8 +62,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
+
   return (
     <html lang="en">
+      <script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3335495978805194"
+        crossorigin="anonymous"
+      ></script>
       <body
         className={`${quandoSans.variable} ${quandoSerif.variable} app-body antialiased`}
       >
@@ -76,9 +84,15 @@ export default function RootLayout({
           </div>
         </Providers>
         <Analytics />
-        <GoogleAnalytics
-          gaId={process.env.NEXT_PUBLIC_GA_ID || ""}
-        />
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ""} />
+        {adsenseClient ? (
+          <Script
+            async
+            strategy="afterInteractive"
+            crossOrigin="anonymous"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+          />
+        ) : null}
       </body>
     </html>
   );
