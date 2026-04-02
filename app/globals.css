@@ -1181,13 +1181,13 @@ select:focus-visible,
 .content-section-heading h2 {
   font-family: var(--font-serif), serif;
   font-weight: 600;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.015em;
 }
 
 .content-hero h1 {
   max-width: 13ch;
   font-size: clamp(2.9rem, 5vw, 4.9rem);
-  line-height: 0.96;
+  line-height: 1.08;
 }
 
 .content-lead,
@@ -1257,13 +1257,13 @@ select:focus-visible,
 .content-card h3,
 .content-card h2 {
   font-size: clamp(1.35rem, 2vw, 1.8rem);
-  line-height: 1.12;
+  line-height: 1.2;
 }
 
 .content-card-title {
   font-family: var(--font-serif), serif;
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
 }
 
 .content-card-meta {
@@ -1335,7 +1335,8 @@ select:focus-visible,
 .reader-prose h3 {
   font-family: var(--font-serif), serif;
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .reader-prose h2 {
@@ -1550,8 +1551,8 @@ select:focus-visible,
   margin: 0;
   font-family: var(--font-serif);
   font-size: clamp(2.5rem, 5vw, 4.8rem);
-  line-height: 0.96;
-  letter-spacing: -0.04em;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
 }
 
 .not-found-lead {
@@ -1961,6 +1962,139 @@ select:focus-visible,
 .character-card p {
   margin: 0;
   line-height: 1.75;
+}
+
+.atlas-map-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.4rem;
+  border-radius: calc(var(--radius-lg) + 0.1rem);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(210, 180, 140, 0.24), transparent 32%),
+    linear-gradient(160deg, rgba(251, 246, 239, 0.98), rgba(244, 236, 223, 0.92));
+}
+
+.atlas-map-canvas {
+  position: relative;
+  min-height: 28rem;
+  overflow: hidden;
+  border-radius: calc(var(--radius-lg) + 0.1rem);
+  border: 1px solid rgba(133, 93, 54, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(250, 243, 231, 0.96)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(133, 93, 54, 0.05) 0,
+      rgba(133, 93, 54, 0.05) 1px,
+      transparent 1px,
+      transparent 4.75rem
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(133, 93, 54, 0.04) 0,
+      rgba(133, 93, 54, 0.04) 1px,
+      transparent 1px,
+      transparent 4.75rem
+    );
+}
+
+.atlas-map-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 68%, rgba(141, 184, 165, 0.26), transparent 18%),
+    radial-gradient(circle at 54% 44%, rgba(133, 93, 54, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 22%, rgba(95, 140, 122, 0.12), transparent 20%);
+}
+
+.atlas-map-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.atlas-map-pin {
+  position: absolute;
+  display: grid;
+  gap: 0.3rem;
+  text-decoration: none;
+  transform: translate(-50%, -50%);
+}
+
+.atlas-map-pin-dot {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  background: #24403c;
+  box-shadow: 0 0 0 6px rgba(36, 64, 60, 0.12);
+}
+
+.atlas-map-pin-route .atlas-map-pin-dot {
+  background: #855d36;
+  box-shadow: 0 0 0 6px rgba(133, 93, 54, 0.15);
+}
+
+.atlas-map-pin-highlighted .atlas-map-pin-dot {
+  background: #141414;
+  box-shadow: 0 0 0 8px rgba(20, 20, 20, 0.16);
+}
+
+.atlas-map-pin-label {
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 252, 248, 0.95);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  color: var(--text);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.atlas-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.atlas-route-diagram {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.atlas-route-diagram-compact {
+  margin-bottom: 0.25rem;
+}
+
+.atlas-route-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.9rem 1rem;
+  border-radius: calc(var(--radius-md) + 0.05rem);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.atlas-route-step p,
+.atlas-route-step strong {
+  margin: 0;
+}
+
+.atlas-route-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: rgba(133, 93, 54, 0.12);
+  color: #855d36;
+  font-weight: 700;
 }
 
 .bible-reader-study-panel {
@@ -2637,6 +2771,10 @@ select:focus-visible,
   .not-found-grid {
     grid-template-columns: 1fr;
   }
+
+  .atlas-map-canvas {
+    min-height: 22rem;
+  }
 }
 
 @media (max-width: 720px) {
@@ -2940,7 +3078,7 @@ select:focus-visible,
   .content-hero h1,
   .content-section-heading h2,
   .article-card h1 {
-    line-height: 1.02;
+    line-height: 1.12;
   }
 
   .social-share-link {

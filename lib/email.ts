@@ -71,26 +71,38 @@ async function sendViaSendGrid(payload: EmailPayload): Promise<boolean> {
 
 export async function sendDailyDevotional(
   email: string,
-  verse: string,
-  reflection: string,
+  payload: {
+    title: string;
+    reference: string;
+    verse: string;
+    reflection: string;
+    prayer?: string;
+    manageUrl?: string;
+  },
 ): Promise<boolean> {
   return sendEmail({
     to: email,
-    subject: "Daily Devotional - Your verse for today",
+    subject: `Daily Devotional: ${payload.title}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Today's Verse</h2>
+        <h2>${payload.title}</h2>
+        <p style="color: #6b7280; font-size: 14px;">${payload.reference}</p>
         <blockquote style="border-left: 4px solid #3b82f6; padding-left: 16px; margin: 20px 0;">
-          <p style="font-size: 18px; font-weight: bold; color: #1f2937;">${verse}</p>
+          <p style="font-size: 18px; font-weight: bold; color: #1f2937;">${payload.verse}</p>
         </blockquote>
         <h3>Reflection</h3>
-        <p style="line-height: 1.6; color: #4b5563;">${reflection}</p>
+        <p style="line-height: 1.6; color: #4b5563;">${payload.reflection}</p>
+        ${
+          payload.prayer
+            ? `<h3>Prayer</h3><p style="line-height: 1.6; color: #4b5563;">${payload.prayer}</p>`
+            : ""
+        }
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
         <p style="font-size: 12px; color: #9ca3af;">
-          <a href="https://example.com/settings">Manage email preferences</a>
+          <a href="${payload.manageUrl || "https://example.com/notifications"}">Manage email preferences</a>
         </p>
       </div>
     `,
-    text: `Today's Verse:\n\n${verse}\n\nReflection:\n\n${reflection}`,
+    text: `${payload.title}\n${payload.reference}\n\nToday's Verse:\n\n${payload.verse}\n\nReflection:\n\n${payload.reflection}${payload.prayer ? `\n\nPrayer:\n\n${payload.prayer}` : ""}`,
   });
 }

@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { getBibleLocations } from "@/lib/bible-atlas";
+import { getAtlasJourneys, getBibleLocations, getBibleLocationBySlug } from "@/lib/bible-atlas";
+import AtlasExplorer from "./AtlasExplorer";
+import AtlasMapPanel from "./AtlasMapPanel";
 
 export default function MapsPage() {
   const locations = getBibleLocations();
+  const journeys = getAtlasJourneys();
 
   return (
     <main id="main-content" className="page-shell content-shell content-stack">
@@ -17,6 +20,7 @@ export default function MapsPage() {
         </p>
         <div className="content-chip-row">
           <span className="content-chip">{locations.length} locations</span>
+          <span className="content-chip">{journeys.length} route diagrams</span>
           <span className="content-chip">Passage links</span>
           <span className="content-chip">People and place context</span>
         </div>
@@ -25,11 +29,11 @@ export default function MapsPage() {
       <section className="content-grid-three">
         <article className="content-stat">
           <span>Key regions</span>
-          <strong>8</strong>
+          <strong>{new Set(locations.map((location) => location.region)).size}</strong>
         </article>
         <article className="content-stat">
           <span>Story eras</span>
-          <strong>6</strong>
+          <strong>{new Set(locations.map((location) => location.era)).size}</strong>
         </article>
         <article className="content-stat">
           <span>Study handoff</span>
@@ -37,32 +41,62 @@ export default function MapsPage() {
         </article>
       </section>
 
-      <section className="atlas-grid">
-        {locations.map((location) => (
-          <article key={location.slug} className="content-card atlas-card">
-            <div className="content-section-heading">
-              <p className="eyebrow">{location.region}</p>
-              <h2>{location.name}</h2>
-            </div>
-            <p className="content-card-meta">{location.era}</p>
-            <p>{location.summary}</p>
-            <div className="dictionary-chip-group">
-              {location.relatedCharacters.slice(0, 3).map((person) => (
-                <span key={`${location.slug}-${person}`} className="content-chip">
-                  {person.replace(/-/g, " ")}
-                </span>
-              ))}
-            </div>
-            <div className="dictionary-link-list">
-              <Link href={`/maps/${location.slug}`} className="button-secondary">
-                Open atlas entry
-              </Link>
-              <Link href={`/passage/${encodeURIComponent(location.keyReferences[0])}`} className="button-secondary">
-                Read key passage
-              </Link>
-            </div>
-          </article>
-        ))}
+      <AtlasMapPanel locations={locations} />
+
+      <AtlasExplorer locations={locations} journeys={journeys} />
+
+      <section className="content-section-card content-stack">
+        <div className="content-section-heading">
+          <p className="eyebrow">Atlas journeys</p>
+          <h2>Follow connected movements through the biblical story</h2>
+        </div>
+        <div className="content-grid-two">
+          {journeys.map((journey) => (
+            <article key={journey.slug} className="content-card">
+              <div className="content-section-heading">
+                <p className="eyebrow">{journey.era}</p>
+                <h3 className="content-card-title">{journey.title}</h3>
+              </div>
+              <p>{journey.summary}</p>
+              <p className="content-card-meta">{journey.focus}</p>
+              <div className="atlas-route-diagram atlas-route-diagram-compact">
+                {journey.stops.slice(0, 4).map((stop, index) => {
+                  const location = getBibleLocationBySlug(stop);
+                  return location ? (
+                    <div key={`${journey.slug}-${stop}-compact`} className="atlas-route-step">
+                      <span className="atlas-route-step-number">{index + 1}</span>
+                      <div>
+                        <strong>{location.name}</strong>
+                        <p>{location.mapLabel}</p>
+                      </div>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+              <div className="content-chip-row">
+                {journey.stops.map((stop) => {
+                  const location = getBibleLocationBySlug(stop);
+                  return location ? (
+                    <Link key={`${journey.slug}-${stop}`} href={`/maps/${location.slug}`} className="content-chip">
+                      {location.name}
+                    </Link>
+                  ) : null;
+                })}
+              </div>
+              <div className="dictionary-link-list">
+                {journey.keyReferences.slice(0, 2).map((reference) => (
+                  <Link
+                    key={`${journey.slug}-${reference}`}
+                    href={`/passage/${encodeURIComponent(reference)}`}
+                    className="button-secondary"
+                  >
+                    {reference}
+                  </Link>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="content-card">

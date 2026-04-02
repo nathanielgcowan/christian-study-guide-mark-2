@@ -1,3 +1,4 @@
+import Link from "next/link";
 import JournalForm from "./JournalForm";
 
 export default function JournalPage() {
@@ -11,6 +12,11 @@ export default function JournalPage() {
           reference, and build a real study workspace instead of a single local
           textarea.
         </p>
+        <div className="content-actions">
+          <Link href="/exports" className="button-secondary">
+            Export notes and study data
+          </Link>
+        </div>
       </section>
 
       <JournalForm />

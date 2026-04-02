@@ -204,6 +204,12 @@ export default function AdminContentPage() {
           <Link href="/admin/dictionary" className="button-secondary">
             View dictionary inventory
           </Link>
+          <Link href="/admin/churches" className="button-secondary">
+            Edit church branding
+          </Link>
+          <Link href="/admin/moderation" className="button-secondary">
+            Open moderation queue
+          </Link>
         </div>
       </section>
 

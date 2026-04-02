@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getMemoryReviewQueue,
+  getMemoryVerses,
+  saveMemoryVerses,
+} from "@/lib/client-features";
 
 interface MemoryVerse {
   id: string;
@@ -278,13 +284,9 @@ function AddVerseForm({
 export default function ScriptureMemory() {
   const [verses, setVerses] = useState<MemoryVerse[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("memoryVerses");
-      if (saved) {
-        try {
-          return JSON.parse(saved) as MemoryVerse[];
-        } catch {
-          return [];
-        }
+      const saved = getMemoryVerses();
+      if (saved.length > 0) {
+        return saved as MemoryVerse[];
       }
     }
 
@@ -307,8 +309,14 @@ export default function ScriptureMemory() {
 
   // Save verses to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("memoryVerses", JSON.stringify(verses));
+    saveMemoryVerses(verses);
   }, [verses]);
+
+  const reviewQueue = useMemo(() => getMemoryReviewQueue(verses), [verses]);
+  const dueVerses = useMemo(
+    () => reviewQueue.filter((verse) => verse.due).slice(0, 3),
+    [reviewQueue],
+  );
 
   const addVerse = (
     verseData: Omit<
@@ -371,6 +379,7 @@ export default function ScriptureMemory() {
     mastered: verses.filter((v) => v.mastered).length,
     inProgress: verses.filter((v) => !v.mastered && v.reviewCount > 0).length,
     notStarted: verses.filter((v) => v.reviewCount === 0).length,
+    due: reviewQueue.filter((v) => v.due).length,
   };
 
   return (
@@ -384,8 +393,71 @@ export default function ScriptureMemory() {
         </p>
       </section>
 
-        {/* Stats */}
-        <div className="mb-8 grid gap-4 md:grid-cols-4">
+      <section className="content-grid-two">
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Review queue</p>
+            <h2>What is ready to revisit today</h2>
+          </div>
+          {dueVerses.length > 0 ? (
+            <div className="content-stack">
+              {dueVerses.map((verse) => (
+                <article key={verse.id} className="content-card-note">
+                  <strong>{verse.reference}</strong>
+                  <p>{verse.text}</p>
+                  <p>
+                    {verse.category} · reviewed {verse.reviewCount} time
+                    {verse.reviewCount === 1 ? "" : "s"}
+                  </p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="content-card-note">
+              Nothing is due right now. Keep adding verses and the review queue
+              will pace the repetition for you.
+            </div>
+          )}
+          <div className="content-actions">
+            <button
+              type="button"
+              onClick={() => setFilter("due")}
+              className="button-primary"
+            >
+              Review due verses
+            </button>
+            <Link href="/dashboard" className="button-secondary">
+              Open dashboard
+            </Link>
+          </div>
+        </section>
+
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Rhythm</p>
+            <h2>How the queue is pacing your memory work</h2>
+          </div>
+          <div className="content-stack">
+            <div className="content-card-note">
+              <strong>{stats.due} verses are due for review</strong>
+              <p>
+                Verses become due based on how often you have reviewed them, so
+                repetition stays steady instead of random.
+              </p>
+            </div>
+            <div className="content-card-note">
+              <strong>{stats.inProgress} verses are actively in progress</strong>
+              <p>
+                Keep returning to a smaller set each day and let mastery build
+                through repetition.
+              </p>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      {/* Stats */}
+        <div className="mb-8 grid gap-4 md:grid-cols-5">
           <div className="rounded-3xl bg-white p-6 text-center shadow-md">
             <div className="text-2xl font-bold text-blue-600">
               {stats.total}
@@ -409,6 +481,12 @@ export default function ScriptureMemory() {
               {stats.notStarted}
             </div>
             <div className="text-slate-600">Not Started</div>
+          </div>
+          <div className="rounded-3xl bg-white p-6 text-center shadow-md">
+            <div className="text-2xl font-bold text-amber-600">
+              {stats.due}
+            </div>
+            <div className="text-slate-600">Due Today</div>
           </div>
         </div>
 

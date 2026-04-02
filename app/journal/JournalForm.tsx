@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+const JOURNAL_DRAFT_KEY = "csg-journal-draft";
+
 interface NoteItem {
   id: string;
   reference: string;
@@ -12,6 +14,8 @@ interface NoteItem {
   color: string;
   updatedAt: string;
   tags: string[];
+  folder: string | null;
+  pinned: boolean;
 }
 
 export default function JournalForm() {
@@ -23,6 +27,11 @@ export default function JournalForm() {
   const [content, setContent] = useState("");
   const [noteType, setNoteType] = useState("note");
   const [tags, setTags] = useState("");
+  const [folder, setFolder] = useState("");
+  const [search, setSearch] = useState("");
+  const [selectedTag, setSelectedTag] = useState("all");
+  const [selectedFolder, setSelectedFolder] = useState("all");
+  const [pinnedOnly, setPinnedOnly] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +53,31 @@ export default function JournalForm() {
         const data = (await response.json()) as { notes: NoteItem[] };
         setNotes(data.notes);
       }
+
+      try {
+        const savedDraft = window.localStorage.getItem(JOURNAL_DRAFT_KEY);
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft) as {
+            reference?: string;
+            content?: string;
+            noteType?: string;
+            tags?: string;
+            folder?: string;
+          };
+
+          if (parsed.reference) setReference(parsed.reference);
+          if (parsed.content) setContent(parsed.content);
+          if (parsed.noteType) setNoteType(parsed.noteType);
+          if (parsed.tags) setTags(parsed.tags);
+          if (parsed.folder) setFolder(parsed.folder);
+          if (parsed.reference || parsed.content || parsed.tags) {
+            setStatus("Unfinished journal draft restored.");
+          }
+        }
+      } catch {
+        // Ignore malformed draft data.
+      }
+
       setLoading(false);
     }
 
@@ -64,6 +98,7 @@ export default function JournalForm() {
         reference,
         content,
         noteType,
+        folder,
         tags: tags
           .split(",")
           .map((tag) => tag.trim())
@@ -78,10 +113,96 @@ export default function JournalForm() {
       setNotes((current) => [note, ...current]);
       setContent("");
       setTags("");
+      setFolder("");
+      setReference("John 3:16");
+      setNoteType("note");
+      window.localStorage.removeItem(JOURNAL_DRAFT_KEY);
       setStatus("Note saved.");
     } else {
       setStatus("Could not save note.");
     }
+  }
+
+  useEffect(() => {
+    if (loading || !signedIn) return;
+
+    const hasDraft = Boolean(reference.trim() || content.trim() || tags.trim());
+    if (!hasDraft) {
+      window.localStorage.removeItem(JOURNAL_DRAFT_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(
+      JOURNAL_DRAFT_KEY,
+      JSON.stringify({
+        reference,
+        content,
+        noteType,
+        folder,
+        tags,
+      }),
+    );
+  }, [content, folder, loading, noteType, reference, signedIn, tags]);
+
+  const availableTags = Array.from(
+    new Set(notes.flatMap((note) => note.tags).filter(Boolean)),
+  ).sort((left, right) => left.localeCompare(right));
+
+  const availableFolders = Array.from(
+    new Set(
+      notes
+        .map((note) => note.folder)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ).sort((left, right) => left.localeCompare(right));
+
+  const filteredNotes = notes.filter((note) => {
+    const query = search.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      note.reference.toLowerCase().includes(query) ||
+      note.content.toLowerCase().includes(query) ||
+      note.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+      (note.folder ?? "").toLowerCase().includes(query);
+    const matchesTag = selectedTag === "all" || note.tags.includes(selectedTag);
+    const matchesFolder =
+      selectedFolder === "all" || (note.folder ?? "Unfiled") === selectedFolder;
+    const matchesPinned = !pinnedOnly || note.pinned;
+
+    return matchesSearch && matchesTag && matchesFolder && matchesPinned;
+  });
+
+  async function updateNoteOrganization(
+    note: NoteItem,
+    updates: Partial<Pick<NoteItem, "folder" | "pinned">>,
+  ) {
+    const response = await fetch("/api/user/notes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: note.id,
+        folder: updates.folder !== undefined ? updates.folder : note.folder,
+        pinned: updates.pinned !== undefined ? updates.pinned : note.pinned,
+      }),
+    });
+
+    if (!response.ok) {
+      setStatus("Could not update note organization.");
+      return;
+    }
+
+    const updated = (await response.json()) as NoteItem;
+    setNotes((current) =>
+      current
+        .map((entry) => (entry.id === updated.id ? { ...entry, ...updated } : entry))
+        .sort((left, right) => {
+          if (left.pinned !== right.pinned) {
+            return left.pinned ? -1 : 1;
+          }
+          return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+        }),
+    );
+    setStatus(updated.pinned ? "Note pinned." : "Note organization updated.");
   }
 
   async function deleteNote(id: string) {
@@ -158,6 +279,16 @@ export default function JournalForm() {
           </div>
 
           <div>
+            <label className="minimal-label">Folder</label>
+            <input
+              value={folder}
+              onChange={(event) => setFolder(event.target.value)}
+              className="minimal-input"
+              placeholder="Sermons, Prayer, Romans study"
+            />
+          </div>
+
+          <div>
             <label className="minimal-label">Content</label>
             <textarea
               value={content}
@@ -175,20 +306,80 @@ export default function JournalForm() {
           </button>
         </div>
 
+        <p className="content-card-meta">Drafts auto-save in this browser while you write.</p>
         {status ? <p className="share-status">{status}</p> : null}
       </form>
 
       <section className="content-card">
         <div className="content-section-heading">
           <p className="eyebrow">Saved notes</p>
-          <h2>Your recent study workspace</h2>
+          <h2>Your organized study workspace</h2>
         </div>
 
-        {notes.length > 0 ? (
+        <div className="minimal-form-grid">
+          <div>
+            <label className="minimal-label">Search notes</label>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="minimal-input"
+              placeholder="Search reference, content, folder, or tag"
+            />
+          </div>
+          <div>
+            <label className="minimal-label">Filter by tag</label>
+            <select
+              value={selectedTag}
+              onChange={(event) => setSelectedTag(event.target.value)}
+              className="minimal-select"
+            >
+              <option value="all">All tags</option>
+              {availableTags.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="minimal-label">Filter by folder</label>
+            <select
+              value={selectedFolder}
+              onChange={(event) => setSelectedFolder(event.target.value)}
+              className="minimal-select"
+            >
+              <option value="all">All folders</option>
+              <option value="Unfiled">Unfiled</option>
+              {availableFolders.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="content-chip-row">
+          <button
+            type="button"
+            onClick={() => setPinnedOnly((current) => !current)}
+            className={pinnedOnly ? "button-primary button-small" : "button-secondary button-small"}
+          >
+            {pinnedOnly ? "Showing pinned only" : "Show pinned only"}
+          </button>
+          <span className="content-chip">{availableFolders.length} folders</span>
+          <span className="content-chip">{availableTags.length} tags</span>
+        </div>
+
+        {filteredNotes.length > 0 ? (
           <div className="content-stack">
-            {notes.slice(0, 8).map((note) => (
+            {filteredNotes.map((note) => (
               <article key={note.id} className="content-card-note">
-                <strong>{note.reference}</strong>
+                <div className="content-chip-row">
+                  <strong>{note.reference}</strong>
+                  {note.pinned ? <span className="content-badge">Pinned</span> : null}
+                  <span className="content-chip">{note.folder ?? "Unfiled"}</span>
+                </div>
                 <p>{note.content}</p>
                 <p>
                   {note.noteType} · Updated{" "}
@@ -197,19 +388,43 @@ export default function JournalForm() {
                 {note.tags.length > 0 ? (
                   <p>Tags: {note.tags.join(", ")}</p>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => void deleteNote(note.id)}
-                  className="button-secondary"
-                >
-                  Delete
-                </button>
+                <div className="content-actions">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void updateNoteOrganization(note, {
+                        pinned: !note.pinned,
+                      })
+                    }
+                    className="button-secondary"
+                  >
+                    {note.pinned ? "Unpin" : "Pin"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void updateNoteOrganization(note, {
+                        folder: note.folder ? null : "General",
+                      })
+                    }
+                    className="button-secondary"
+                  >
+                    {note.folder ? "Clear folder" : "Move to General"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void deleteNote(note.id)}
+                    className="button-secondary"
+                  >
+                    Delete
+                  </button>
+                </div>
               </article>
             ))}
           </div>
         ) : (
           <div className="content-card-note">
-            Notes you save here will start building a searchable study record.
+            Notes you save here will build a searchable, folder-based study record.
           </div>
         )}
       </section>

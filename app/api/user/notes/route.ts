@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth-server";
 
+type NoteOrganizationMeta = {
+  folder: string | null;
+  pinned: boolean;
+};
+
+type NoteOrganizationMap = Record<string, NoteOrganizationMeta>;
+
 async function ensureUserProfile(
   supabase: Awaited<ReturnType<typeof createClient>>,
   user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>,
@@ -14,6 +21,64 @@ async function ensureUserProfile(
     },
     { onConflict: "id" },
   );
+
+  return error;
+}
+
+async function getOrganizationMap(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  const { data } = await supabase
+    .from("user_command_center_preferences")
+    .select("recommendation_weights")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const weights = (data?.recommendation_weights ?? {}) as {
+    noteOrganization?: NoteOrganizationMap;
+  };
+
+  return weights.noteOrganization ?? {};
+}
+
+async function saveOrganizationMap(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  organizationMap: NoteOrganizationMap,
+) {
+  const { data: existing, error: existingError } = await supabase
+    .from("user_command_center_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existingError) {
+    return existingError;
+  }
+
+  const existingWeights = (existing?.recommendation_weights ?? {}) as Record<string, unknown>;
+
+  const { error } = await supabase
+    .from("user_command_center_preferences")
+    .upsert(
+      {
+        user_id: userId,
+        focus_goal: existing?.focus_goal ?? "consistency",
+        recommendation_weights: {
+          ...existingWeights,
+          noteOrganization: organizationMap,
+        },
+        visible_widgets: existing?.visible_widgets ?? {
+          bookmarks: true,
+          prayerRequests: true,
+          emailPreferences: true,
+          studySummary: true,
+        },
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
 
   return error;
 }
@@ -41,6 +106,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    const organizationMap = await getOrganizationMap(supabase, user.id);
     const notes = (data ?? []).map((note) => ({
       id: note.id,
       reference: note.reference,
@@ -52,7 +118,16 @@ export async function GET() {
       tags: Array.isArray(note.note_tags)
         ? note.note_tags.map((tag: { tag: string }) => tag.tag)
         : [],
+      folder: organizationMap[note.id]?.folder ?? null,
+      pinned: organizationMap[note.id]?.pinned ?? false,
     }));
+
+    notes.sort((left, right) => {
+      if (left.pinned !== right.pinned) {
+        return left.pinned ? -1 : 1;
+      }
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    });
 
     return NextResponse.json({ notes });
   } catch {
@@ -76,12 +151,16 @@ export async function POST(request: NextRequest) {
       noteType,
       color,
       tags,
+      folder,
+      pinned,
     }: {
       reference: string;
       content: string;
       noteType?: string;
       color?: string;
       tags?: string[];
+      folder?: string | null;
+      pinned?: boolean;
     } = await request.json();
 
     if (!reference || !content) {
@@ -121,6 +200,18 @@ export async function POST(request: NextRequest) {
       await supabase.from("note_tags").insert(inserts);
     }
 
+    const organizationMap = await getOrganizationMap(supabase, user.id);
+    const organizationError = await saveOrganizationMap(supabase, user.id, {
+      ...organizationMap,
+      [data.id]: {
+        folder: folder?.trim() || null,
+        pinned: Boolean(pinned),
+      },
+    });
+    if (organizationError) {
+      return NextResponse.json({ error: organizationError.message }, { status: 400 });
+    }
+
     return NextResponse.json(
       {
         id: data.id,
@@ -131,6 +222,8 @@ export async function POST(request: NextRequest) {
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         tags: tags ?? [],
+        folder: folder?.trim() || null,
+        pinned: Boolean(pinned),
       },
       { status: 201 },
     );
@@ -155,12 +248,16 @@ export async function PATCH(request: NextRequest) {
       color,
       noteType,
       tags,
+      folder,
+      pinned,
     }: {
       id: string;
       content?: string;
       color?: string;
       noteType?: string;
       tags?: string[];
+      folder?: string | null;
+      pinned?: boolean;
     } = await request.json();
 
     if (!id) {
@@ -207,6 +304,22 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    const organizationMap = await getOrganizationMap(supabase, user.id);
+    const nextMeta = organizationMap[id] ?? {
+      folder: null,
+      pinned: false,
+    };
+    const organizationError = await saveOrganizationMap(supabase, user.id, {
+      ...organizationMap,
+      [id]: {
+        folder: folder !== undefined ? folder?.trim() || null : nextMeta.folder,
+        pinned: pinned !== undefined ? pinned : nextMeta.pinned,
+      },
+    });
+    if (organizationError) {
+      return NextResponse.json({ error: organizationError.message }, { status: 400 });
+    }
+
     return NextResponse.json({
       id: data.id,
       reference: data.reference,
@@ -216,6 +329,8 @@ export async function PATCH(request: NextRequest) {
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       tags: tags ?? [],
+      folder: folder !== undefined ? folder?.trim() || null : nextMeta.folder,
+      pinned: pinned !== undefined ? pinned : nextMeta.pinned,
     });
   } catch {
     return NextResponse.json(
@@ -252,6 +367,13 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase.from("user_notes").delete().eq("id", id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    const organizationMap = await getOrganizationMap(supabase, user.id);
+    if (organizationMap[id]) {
+      const nextMap = { ...organizationMap };
+      delete nextMap[id];
+      await saveOrganizationMap(supabase, user.id, nextMap);
     }
 
     return NextResponse.json({ success: true });

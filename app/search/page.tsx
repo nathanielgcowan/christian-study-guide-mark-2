@@ -1,12 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
-interface SearchResult {
+interface BibleSearchResult {
   reference: string;
   text: string;
   version: string;
+}
+
+type SearchFilter =
+  | "all"
+  | "verses"
+  | "notes"
+  | "atlas"
+  | "blog"
+  | "topics"
+  | "groups";
+
+interface SmartSearchResult {
+  id: string;
+  title: string;
+  type:
+    | "dictionary"
+    | "atlas"
+    | "blog"
+    | "content"
+    | "note"
+    | "bookmark"
+    | "topic"
+    | "group";
+  href: string;
+  excerpt: string;
+  meta: string;
 }
 
 const SEARCH_HISTORY_KEY = "csg-search-history";
@@ -19,10 +45,22 @@ const suggestedSearches = [
   "wisdom",
 ];
 
+const searchFilters: Array<{ id: SearchFilter; label: string }> = [
+  { id: "all", label: "Everything" },
+  { id: "verses", label: "Verses" },
+  { id: "notes", label: "Notes" },
+  { id: "atlas", label: "Atlas" },
+  { id: "blog", label: "Blog" },
+  { id: "topics", label: "Topics" },
+  { id: "groups", label: "Groups" },
+];
+
 export default function SearchPage() {
   const [query, setQuery] = useState("love");
+  const [filter, setFilter] = useState<SearchFilter>("all");
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [bibleResults, setBibleResults] = useState<BibleSearchResult[]>([]);
+  const [smartResults, setSmartResults] = useState<SmartSearchResult[]>([]);
   const [searched, setSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
@@ -45,24 +83,28 @@ export default function SearchPage() {
     window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(nextSearches));
   }
 
-  async function runSearch(nextQuery: string) {
+  async function runSearch(nextQuery: string, nextFilter: SearchFilter = filter) {
     const trimmedQuery = nextQuery.trim();
     if (!trimmedQuery) return;
 
     setQuery(trimmedQuery);
     setLoading(true);
-    const response = await fetch("/api/bible/search", {
+    const response = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: trimmedQuery }),
+      body: JSON.stringify({ query: trimmedQuery, filter: nextFilter }),
     });
 
     setLoading(false);
     setSearched(true);
 
     if (response.ok) {
-      const data = (await response.json()) as { results: SearchResult[] };
-      setResults(data.results);
+      const data = (await response.json()) as {
+        bibleResults: BibleSearchResult[];
+        smartResults: SmartSearchResult[];
+      };
+      setBibleResults(data.bibleResults);
+      setSmartResults(data.smartResults);
 
       const nextRecentSearches = [
         trimmedQuery,
@@ -70,23 +112,41 @@ export default function SearchPage() {
       ].slice(0, 8);
       persistRecentSearches(nextRecentSearches);
     } else {
-      setResults([]);
+      setBibleResults([]);
+      setSmartResults([]);
     }
   }
 
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
-    await runSearch(query);
+    await runSearch(query, filter);
   }
+
+  const smartResultsHeading = useMemo(() => {
+    switch (filter) {
+      case "notes":
+        return "Notes and bookmarks";
+      case "atlas":
+        return "Atlas results";
+      case "blog":
+        return "Blog matches";
+      case "topics":
+        return "Topic study matches";
+      case "groups":
+        return "Group matches";
+      default:
+        return "Matches across the whole site";
+    }
+  }, [filter]);
 
   return (
     <main id="main-content" className="page-shell content-shell-narrow content-stack">
       <section className="content-hero">
         <p className="eyebrow">Scripture search</p>
-        <h1>Search Scripture and move straight into study.</h1>
+        <h1>Search the site with clearer filters.</h1>
         <p className="content-lead">
-          Use a keyword or phrase to surface passages, then carry what you find
-          into bookmarks, notes, prayer, or verse images.
+          Search by verses, notes, atlas, blog, topics, or groups so you can
+          narrow the result set before opening the next study surface.
         </p>
       </section>
 
@@ -102,9 +162,25 @@ export default function SearchPage() {
             />
           </div>
 
+          <div>
+            <label className="minimal-label">Filter</label>
+            <div className="content-chip-row">
+              {searchFilters.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setFilter(item.id)}
+                  className={filter === item.id ? "button-primary button-small" : "button-secondary button-small"}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="content-actions">
             <button type="submit" className="button-primary" disabled={loading}>
-              {loading ? "Searching..." : "Search Scripture"}
+              {loading ? "Searching..." : "Search"}
             </button>
             <Link href="/journal" className="button-secondary">
               Open notes
@@ -123,7 +199,7 @@ export default function SearchPage() {
             <button
               key={item}
               type="button"
-              onClick={() => void runSearch(item)}
+              onClick={() => void runSearch(item, filter)}
               className="button-secondary button-small"
             >
               {item}
@@ -152,7 +228,7 @@ export default function SearchPage() {
               <button
                 key={item}
                 type="button"
-                onClick={() => void runSearch(item)}
+                onClick={() => void runSearch(item, filter)}
                 className="button-secondary button-small"
               >
                 {item}
@@ -163,38 +239,75 @@ export default function SearchPage() {
       ) : null}
 
       <section className="content-stack">
-        {searched && results.length === 0 ? (
+        {searched && smartResults.length === 0 && bibleResults.length === 0 ? (
           <div className="content-card-note">
-            No results came back for that search yet. Try a broader keyword.
+            No results came back for that search yet. Try a broader keyword or a
+            different filter.
           </div>
         ) : null}
 
-        {results.map((result) => (
-          <article key={`${result.reference}-${result.text}`} className="content-card">
-            <div className="content-chip-row">
-              <span className="content-badge">{result.version}</span>
-              <span className="content-card-meta">{result.reference}</span>
+        {smartResults.length > 0 ? (
+          <section className="content-section-card content-stack">
+            <div className="content-section-heading">
+              <p className="eyebrow">Filtered results</p>
+              <h2>{smartResultsHeading}</h2>
             </div>
-            <p>{result.text}</p>
-            <div className="content-actions">
-              <Link
-                href={`/passage/${encodeURIComponent(result.reference)}`}
-                className="button-primary"
-              >
-                Study passage
-              </Link>
-              <Link
-                href={`/share/verse?verse=${encodeURIComponent(result.text)}&reference=${encodeURIComponent(result.reference)}`}
-                className="button-secondary"
-              >
-                Share verse
-              </Link>
-              <Link href="/user/verse-generator" className="button-secondary">
-                Create image
-              </Link>
+            <div className="content-grid-two">
+              {smartResults.map((result) => (
+                <article key={result.id} className="content-card">
+                  <div className="content-chip-row">
+                    <span className="content-badge">{result.type}</span>
+                    <span className="content-card-meta">{result.meta}</span>
+                  </div>
+                  <h3 className="content-card-title">{result.title}</h3>
+                  <p>{result.excerpt}</p>
+                  <div className="content-actions">
+                    <Link href={result.href} className="button-primary">
+                      Open result
+                    </Link>
+                  </div>
+                </article>
+              ))}
             </div>
-          </article>
-        ))}
+          </section>
+        ) : null}
+
+        {bibleResults.length > 0 ? (
+          <section className="content-section-card content-stack">
+            <div className="content-section-heading">
+              <p className="eyebrow">Bible results</p>
+              <h2>Passages matching your search</h2>
+            </div>
+            <div className="content-stack">
+              {bibleResults.map((result) => (
+                <article key={`${result.reference}-${result.text}`} className="content-card">
+                  <div className="content-chip-row">
+                    <span className="content-badge">{result.version}</span>
+                    <span className="content-card-meta">{result.reference}</span>
+                  </div>
+                  <p>{result.text}</p>
+                  <div className="content-actions">
+                    <Link
+                      href={`/passage/${encodeURIComponent(result.reference)}`}
+                      className="button-primary"
+                    >
+                      Study passage
+                    </Link>
+                    <Link
+                      href={`/share/verse?verse=${encodeURIComponent(result.text)}&reference=${encodeURIComponent(result.reference)}`}
+                      className="button-secondary"
+                    >
+                      Share verse
+                    </Link>
+                    <Link href="/user/verse-generator" className="button-secondary">
+                      Create image
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </section>
     </main>
   );

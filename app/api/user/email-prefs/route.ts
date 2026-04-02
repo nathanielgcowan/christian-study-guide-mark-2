@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth-server";
-
-interface EmailPreferences {
-  dailyDevotional: boolean;
-  prayerUpdates: boolean;
-  newsletter: boolean;
-}
+import { EmailPreferences, getDefaultEmailPrefs } from "@/lib/notification-prefs";
 
 async function ensureUserProfile(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -22,14 +17,6 @@ async function ensureUserProfile(
   );
 
   return error;
-}
-
-function getDefaultPrefs(): EmailPreferences {
-  return {
-    dailyDevotional: false,
-    prayerUpdates: false,
-    newsletter: false,
-  };
 }
 
 export async function GET() {
@@ -57,7 +44,7 @@ export async function GET() {
 
     const storedPrefs =
       (data?.visible_widgets as { emailPreferences?: EmailPreferences } | null)
-        ?.emailPreferences ?? getDefaultPrefs();
+        ?.emailPreferences ?? getDefaultEmailPrefs();
 
     return NextResponse.json({ emailPrefs: storedPrefs });
   } catch {
@@ -94,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     const nextPrefs: EmailPreferences = {
-      ...getDefaultPrefs(),
+      ...getDefaultEmailPrefs(),
       ...(existing?.visible_widgets as { emailPreferences?: EmailPreferences } | null)
         ?.emailPreferences,
       ...incomingPrefs,

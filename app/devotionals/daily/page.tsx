@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight, BookOpenText, NotebookPen } from "lucide-react";
-import { getPassage } from "@/lib/bible";
 import { devotionals, getDailyDevotional } from "@/lib/devotionals";
 
 export default async function DailyDevotionalsPage() {
@@ -24,7 +23,6 @@ export default async function DailyDevotionalsPage() {
     );
   }
 
-  const passage = await getPassage(devotional.verse.reference);
   const recentDevotionals = devotionals
     .filter((entry) => entry.id !== devotional.id)
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -80,20 +78,9 @@ export default async function DailyDevotionalsPage() {
           <h2>{devotional.title}</h2>
 
           <div className="devotional-verse-block">
-            {passage && passage.length > 0 ? (
-              <blockquote className="devotional-verse">
-                {passage.map((verse) => (
-                  <span key={verse.number} className="block">
-                    <span className="devotional-verse-number">{verse.number}</span>
-                    {verse.text}
-                  </span>
-                ))}
-              </blockquote>
-            ) : (
-              <blockquote className="devotional-verse">
-                &ldquo;{devotional.verse.text}&rdquo;
-              </blockquote>
-            )}
+            <blockquote className="devotional-verse">
+              &ldquo;{devotional.verse.text}&rdquo;
+            </blockquote>
             <cite className="devotional-citation">
               — {devotional.verse.reference}
             </cite>

@@ -3,6 +3,11 @@ export interface BibleLocation {
   name: string;
   region: string;
   era: string;
+  coordinates: {
+    x: number;
+    y: number;
+  };
+  mapLabel: string;
   summary: string;
   significance: string;
   keyReferences: string[];
@@ -20,12 +25,24 @@ export interface BibleCharacter {
   themes: string[];
 }
 
+export interface AtlasJourney {
+  slug: string;
+  title: string;
+  era: string;
+  summary: string;
+  focus: string;
+  stops: string[];
+  keyReferences: string[];
+}
+
 export const bibleLocations: BibleLocation[] = [
   {
     slug: "jerusalem",
     name: "Jerusalem",
     region: "Judah",
     era: "Kingdom to church era",
+    coordinates: { x: 57, y: 58 },
+    mapLabel: "Temple city",
     summary: "Jerusalem becomes the royal city of David, the temple city, and a major center in the ministry of Jesus and the early church.",
     significance: "Jerusalem ties together kingship, worship, sacrifice, prophetic hope, crucifixion, resurrection witness, and Pentecost.",
     keyReferences: ["2 Samuel 5", "Psalm 122", "Luke 19", "Acts 2"],
@@ -36,6 +53,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Bethlehem",
     region: "Judah",
     era: "Judges to gospels",
+    coordinates: { x: 55, y: 61 },
+    mapLabel: "Davidic birthplace",
     summary: "Bethlehem is remembered as David's hometown and the birthplace of Jesus.",
     significance: "The city reinforces God's pattern of bringing redemptive history forward through humble places and fulfilled promise.",
     keyReferences: ["Ruth 1", "1 Samuel 16", "Micah 5:2", "Luke 2"],
@@ -46,6 +65,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Nazareth",
     region: "Galilee",
     era: "Gospels",
+    coordinates: { x: 46, y: 34 },
+    mapLabel: "Hidden hometown",
     summary: "Nazareth is the hometown setting associated with Jesus' upbringing and early identity in the gospels.",
     significance: "Nazareth highlights the humility of Christ's earthly life and the surprising way God's kingdom appears.",
     keyReferences: ["Matthew 2:23", "Luke 1:26", "Luke 4:16", "John 1:46"],
@@ -56,6 +77,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Sea of Galilee",
     region: "Galilee",
     era: "Gospels",
+    coordinates: { x: 54, y: 31 },
+    mapLabel: "Teaching shoreline",
     summary: "The Sea of Galilee surrounds much of Jesus' public teaching, calling of disciples, and miracle ministry.",
     significance: "This setting gathers themes of calling, discipleship, provision, authority over creation, and gospel mission.",
     keyReferences: ["Matthew 4", "Mark 4", "John 6", "John 21"],
@@ -66,6 +89,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Mount Sinai",
     region: "Wilderness",
     era: "Exodus and law",
+    coordinates: { x: 18, y: 75 },
+    mapLabel: "Covenant mountain",
     summary: "Sinai is the mountain where Israel receives the covenant law after redemption from Egypt.",
     significance: "Sinai is central for understanding covenant, holiness, worship, obedience, and God's dwelling with His people.",
     keyReferences: ["Exodus 19-20", "Exodus 24", "Exodus 34", "Deuteronomy 5"],
@@ -76,6 +101,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Babylon",
     region: "Mesopotamia",
     era: "Exile and prophetic hope",
+    coordinates: { x: 88, y: 21 },
+    mapLabel: "Exile empire",
     summary: "Babylon is both a historical empire and a symbolic biblical image of proud rebellion against God.",
     significance: "It frames exile, judgment, longing for restoration, and later apocalyptic contrast with God's city.",
     keyReferences: ["2 Kings 25", "Daniel 1", "Psalm 137", "Revelation 18"],
@@ -86,6 +113,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Rome",
     region: "Italy",
     era: "Church era",
+    coordinates: { x: 9, y: 17 },
+    mapLabel: "Imperial capital",
     summary: "Rome stands as the capital of imperial power and an important destination in the spread of the gospel.",
     significance: "It shows the gospel moving into the heart of the nations and helps frame the letter to the Romans and Paul's mission.",
     keyReferences: ["Acts 28", "Romans 1", "2 Timothy 4"],
@@ -96,6 +125,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Ephesus",
     region: "Asia Minor",
     era: "Church era",
+    coordinates: { x: 23, y: 28 },
+    mapLabel: "Mission hub",
     summary: "Ephesus is a major New Testament ministry center connected with Paul's mission and later church leadership.",
     significance: "It helps readers trace gospel witness, discipleship, spiritual warfare, and church maturity in the early Christian movement.",
     keyReferences: ["Acts 19", "Ephesians 1", "1 Timothy 1", "Revelation 2"],
@@ -106,6 +137,8 @@ export const bibleLocations: BibleLocation[] = [
     name: "Corinth",
     region: "Achaia",
     era: "Church era",
+    coordinates: { x: 16, y: 32 },
+    mapLabel: "Church in tension",
     summary: "Corinth is a strategic but complicated church setting in the New Testament letters.",
     significance: "It illuminates discipleship in a morally complex culture and many core issues of church life, holiness, and love.",
     keyReferences: ["Acts 18", "1 Corinthians 1", "1 Corinthians 13", "2 Corinthians 5"],
@@ -116,10 +149,96 @@ export const bibleLocations: BibleLocation[] = [
     name: "Jordan River",
     region: "Jordan Valley",
     era: "Conquest to gospels",
+    coordinates: { x: 60, y: 46 },
+    mapLabel: "Threshold waters",
     summary: "The Jordan River appears in Israel's entrance into the land and in the baptism ministry surrounding Jesus.",
     significance: "It often marks transition, preparation, promise, and public identification with God's saving work.",
     keyReferences: ["Joshua 3", "2 Kings 2", "Matthew 3", "John 1"],
     relatedCharacters: ["joshua", "elijah", "john-the-baptist", "jesus"],
+  },
+  {
+    slug: "jericho",
+    name: "Jericho",
+    region: "Jordan Valley",
+    era: "Conquest to gospels",
+    coordinates: { x: 58, y: 52 },
+    mapLabel: "First crossing city",
+    summary: "Jericho appears at Israel's first conquest victory and later as a setting in Jesus' healing and salvation ministry.",
+    significance: "Jericho joins conquest, covenant fulfillment, mercy, and the surprising welcome of grace in both Testaments.",
+    keyReferences: ["Joshua 6", "2 Kings 2", "Luke 10:30-37", "Luke 19:1-10"],
+    relatedCharacters: ["joshua", "jesus"],
+  },
+  {
+    slug: "capernaum",
+    name: "Capernaum",
+    region: "Galilee",
+    era: "Gospels",
+    coordinates: { x: 56, y: 28 },
+    mapLabel: "Jesus' ministry base",
+    summary: "Capernaum functions as a key ministry base for Jesus around the Sea of Galilee.",
+    significance: "It gathers preaching, healing, discipleship, authority, and the escalating response to Jesus' public work.",
+    keyReferences: ["Mark 1:21-39", "Matthew 8:5-17", "John 6:24-59"],
+    relatedCharacters: ["jesus", "peter"],
+  },
+  {
+    slug: "caesarea-maritime",
+    name: "Caesarea Maritima",
+    region: "Coastal Plain",
+    era: "Church era",
+    coordinates: { x: 45, y: 49 },
+    mapLabel: "Coastal gateway",
+    summary: "Caesarea is a strategic Roman port city tied to Cornelius, Paul, and the widening reach of the gospel.",
+    significance: "It highlights Gentile inclusion, political power, missionary transition, and gospel witness before rulers.",
+    keyReferences: ["Acts 10", "Acts 12", "Acts 23-26"],
+    relatedCharacters: ["peter", "paul"],
+  },
+  {
+    slug: "damascus",
+    name: "Damascus",
+    region: "Syria",
+    era: "Church era",
+    coordinates: { x: 72, y: 16 },
+    mapLabel: "Conversion road",
+    summary: "Damascus is forever linked to Saul's conversion and early proclamation of Jesus.",
+    significance: "It marks dramatic repentance, calling, and the redirection of zeal into gospel mission.",
+    keyReferences: ["Acts 9", "Acts 22", "Acts 26"],
+    relatedCharacters: ["paul"],
+  },
+  {
+    slug: "antioch",
+    name: "Antioch",
+    region: "Syria",
+    era: "Church era",
+    coordinates: { x: 44, y: 12 },
+    mapLabel: "Sending church",
+    summary: "Antioch becomes a major church center where believers are first called Christians and from which mission is launched.",
+    significance: "It shows cross-cultural church life, shared leadership, generosity, and outward gospel sending.",
+    keyReferences: ["Acts 11:19-30", "Acts 13:1-3", "Galatians 2:11-14"],
+    relatedCharacters: ["paul", "peter"],
+  },
+  {
+    slug: "samaria",
+    name: "Samaria",
+    region: "Central Hill Country",
+    era: "Kingdom to church era",
+    coordinates: { x: 51, y: 47 },
+    mapLabel: "Crossing old divides",
+    summary: "Samaria carries the memory of a divided kingdom and becomes a key setting in the widening reach of Jesus' ministry and the early church.",
+    significance: "It brings together division, mercy, outsider welcome, and the spread of the gospel beyond familiar boundaries.",
+    keyReferences: ["1 Kings 16", "John 4", "Luke 10:25-37", "Acts 8"],
+    relatedCharacters: ["jesus", "peter"],
+  },
+  {
+    slug: "patmos",
+    name: "Patmos",
+    region: "Aegean",
+    era: "Church era",
+    coordinates: { x: 27, y: 24 },
+    mapLabel: "Island of revelation",
+    summary: "Patmos is the island of John's exile and the setting of the Revelation vision.",
+    significance: "It frames suffering, prophetic witness, heavenly perspective, and hope for the churches under pressure.",
+    keyReferences: ["Revelation 1", "Revelation 4-5", "Revelation 21-22"],
+    relatedCharacters: ["john"],
   },
 ];
 
@@ -246,6 +365,63 @@ export const bibleCharacters: BibleCharacter[] = [
   },
 ];
 
+export const atlasJourneys: AtlasJourney[] = [
+  {
+    slug: "exodus-route",
+    title: "The Exodus Route",
+    era: "Exodus and law",
+    summary: "Trace redemption from deliverance out of Egypt to covenant formation and entry toward the promised land.",
+    focus: "Deliverance, covenant, wilderness formation, and the presence of God.",
+    stops: ["mount-sinai", "jordan-river", "jericho"],
+    keyReferences: ["Exodus 12", "Exodus 19-20", "Deuteronomy 8", "Joshua 3"],
+  },
+  {
+    slug: "kingdom-hope",
+    title: "From Bethlehem to Jerusalem",
+    era: "Kingdom to messianic hope",
+    summary: "Follow the rise of Davidic kingship and the way royal hope points beyond itself toward the Messiah.",
+    focus: "Kingship, covenant promise, worship, and messianic expectation.",
+    stops: ["bethlehem", "jerusalem"],
+    keyReferences: ["1 Samuel 16", "2 Samuel 7", "Psalm 122", "Micah 5:2"],
+  },
+  {
+    slug: "jesus-ministry",
+    title: "The Ministry of Jesus",
+    era: "Gospels",
+    summary: "Move through the places most closely tied to the incarnation, baptism, public ministry, and climactic work of Christ.",
+    focus: "Incarnation, discipleship, proclamation, miracle, cross, and resurrection.",
+    stops: ["bethlehem", "nazareth", "jordan-river", "capernaum", "sea-of-galilee", "jericho", "jerusalem"],
+    keyReferences: ["Luke 1-2", "Matthew 3", "Mark 1", "Luke 19", "John 20"],
+  },
+  {
+    slug: "paul-mission",
+    title: "Paul's Mission Journey Arc",
+    era: "Church era",
+    summary: "Track the spread of the gospel through major ministry centers that shaped the New Testament church.",
+    focus: "Mission, church planting, endurance, and the gospel reaching the nations.",
+    stops: ["jerusalem", "caesarea-maritime", "antioch", "ephesus", "corinth", "rome"],
+    keyReferences: ["Acts 13", "Acts 18", "Acts 19", "Acts 28", "Romans 1"],
+  },
+  {
+    slug: "exile-restoration",
+    title: "Exile and Restoration Hope",
+    era: "Exile and prophetic hope",
+    summary: "See how judgment, exile, and restoration hope are anchored in specific places across the biblical story.",
+    focus: "Judgment, faithfulness in exile, prophetic hope, and restoration.",
+    stops: ["jerusalem", "babylon"],
+    keyReferences: ["2 Kings 25", "Psalm 137", "Daniel 1", "Isaiah 40", "Revelation 18"],
+  },
+  {
+    slug: "gospel-to-the-nations",
+    title: "From Jerusalem to the Nations",
+    era: "Church era",
+    summary: "Follow the widening arc of Acts from Jerusalem through boundary-crossing cities into the Gentile world.",
+    focus: "Witness, Spirit-empowered expansion, Gentile inclusion, and gospel momentum.",
+    stops: ["jerusalem", "samaria", "caesarea-maritime", "damascus", "antioch", "rome"],
+    keyReferences: ["Acts 1:8", "Acts 8", "Acts 9", "Acts 10", "Acts 11", "Acts 28"],
+  },
+];
+
 const locationMap = new Map(bibleLocations.map((entry) => [entry.slug, entry]));
 const characterMap = new Map(bibleCharacters.map((entry) => [entry.slug, entry]));
 
@@ -255,6 +431,10 @@ export function getBibleLocations() {
 
 export function getBibleCharacters() {
   return [...bibleCharacters].sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export function getAtlasJourneys() {
+  return [...atlasJourneys];
 }
 
 export function getBibleLocationBySlug(slug: string) {
@@ -275,6 +455,10 @@ export function getRelatedLocationsForCharacter(character: BibleCharacter) {
   return character.relatedLocations
     .map((slug) => getBibleLocationBySlug(slug))
     .filter((entry): entry is BibleLocation => Boolean(entry));
+}
+
+export function getJourneysForLocation(location: BibleLocation) {
+  return atlasJourneys.filter((journey) => journey.stops.includes(location.slug));
 }
 
 export function getSuggestedAtlasContext(reference: string) {
@@ -313,7 +497,7 @@ export function getSuggestedAtlasContext(reference: string) {
     {
       matcher: (value) => value.startsWith("acts"),
       characters: ["peter", "paul"],
-      locations: ["jerusalem", "ephesus", "rome"],
+      locations: ["jerusalem", "samaria", "caesarea-maritime", "antioch"],
     },
     {
       matcher: (value) => value.startsWith("romans") || value.startsWith("1 corinthians") || value.startsWith("2 corinthians") || value.startsWith("ephesians"),

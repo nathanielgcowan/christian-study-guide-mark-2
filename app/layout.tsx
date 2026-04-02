@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Quando } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import AutoSyncClient from "@/components/AutoSyncClient";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import SkipToMain from "@/components/SkipToMain";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-const sans = Manrope({
+const quandoSans = Quando({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: "400",
 });
 
-const serif = Fraunces({
+const quandoSerif = Quando({
   variable: "--font-serif",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -25,9 +28,9 @@ export const metadata: Metadata = {
         : "http://localhost:3000"),
   ),
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
   title: {
     default: "Christian Study Guide",
@@ -61,9 +64,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${sans.variable} ${serif.variable} app-body antialiased`}
+        className={`${quandoSans.variable} ${quandoSerif.variable} app-body antialiased`}
       >
         <Providers>
+          <AutoSyncClient />
           <SkipToMain />
           <div className="site-frame">
             <Header />

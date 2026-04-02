@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Archive,
   BookMarked,
   Compass,
+  MessageSquareQuote,
   NotebookPen,
   Sparkles,
 } from "lucide-react";
@@ -14,6 +16,17 @@ import { getSuggestedAtlasContext } from "@/lib/bible-atlas";
 import { getSuggestedDictionaryEntries } from "@/lib/biblical-dictionary";
 import { BiblePassageVerse, getVerseStudyResource, parseBibleReference } from "@/lib/bible";
 import { getReferenceContext } from "@/lib/bible-context";
+import {
+  addReferenceToCollection,
+  getStudyCollections,
+  pushRecentPassage,
+  StudyCollection,
+} from "@/lib/client-features";
+import {
+  getPassageAssistantSuggestedQuestions,
+  PassageAssistantMessage,
+  PassageAssistantReply,
+} from "@/lib/passage-assistant";
 
 interface ComparisonResult {
   reference: string;
@@ -76,40 +89,6 @@ function isRelatedToPassage(candidate: string, target: string) {
   );
 }
 
-function getStudyPrompts(reference: string) {
-  const normalized = normalizeReference(reference);
-
-  if (normalized.startsWith("john")) {
-    return [
-      "What does this passage reveal about the identity of Jesus?",
-      "Where do you see belief, unbelief, invitation, or response in the text?",
-      "How does this passage call you to trust Christ more personally today?",
-    ];
-  }
-
-  if (normalized.startsWith("psalm")) {
-    return [
-      "What emotion or posture toward God is strongest in this passage?",
-      "What part of the passage sounds most like prayer, worship, or surrender?",
-      "How could this text shape the way you pray today?",
-    ];
-  }
-
-  if (normalized.startsWith("romans")) {
-    return [
-      "What truth about the gospel or the Christian life is being emphasized here?",
-      "What promise, command, or assurance needs careful attention in context?",
-      "How should this passage reframe the way you think, hope, or endure?",
-    ];
-  }
-
-  return [
-    "What stands out most clearly about God's character in this passage?",
-    "What repeated words, contrasts, or promises deserve slower attention?",
-    "What response of faith, obedience, prayer, or comfort does this text invite?",
-  ];
-}
-
 export default function PassagePage() {
   const params = useParams<{ reference: string }>();
   const reference = decodeURIComponent(params.reference);
@@ -123,6 +102,42 @@ export default function PassagePage() {
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [recentStudies, setRecentStudies] = useState<StudyItem[]>([]);
   const [streak, setStreak] = useState<StudyStreak | null>(null);
+  const [collections, setCollections] = useState<StudyCollection[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState("");
+  const [assistantQuestion, setAssistantQuestion] = useState("");
+  const [assistantConversation, setAssistantConversation] = useState<
+    Array<{ question: string; reply: PassageAssistantReply }>
+  >([]);
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantMode, setAssistantMode] = useState<"openai" | "local-fallback" | null>(null);
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const availableCollections = getStudyCollections();
+    setCollections(availableCollections);
+    setSelectedCollectionId((current) => current || availableCollections[0]?.id || "");
+  }, []);
+
+  useEffect(() => {
+    setAssistantConversation([]);
+    setAssistantQuestion("");
+    setAssistantMode(null);
+    setAssistantError(null);
+  }, [reference]);
+
+  useEffect(() => {
+    const parsed = parseBibleReference(reference);
+    const href =
+      parsed?.isChapterReference && parsed.chapter
+        ? `/bible/${encodeURIComponent(parsed.book)}/${parsed.chapter}`
+        : `/passage/${encodeURIComponent(reference)}`;
+
+    void pushRecentPassage({
+      reference,
+      href,
+      type: parsed?.isChapterReference ? "chapter" : "passage",
+    });
+  }, [reference]);
 
   useEffect(() => {
     async function load() {
@@ -226,7 +241,7 @@ export default function PassagePage() {
     ? chapterVerses.map((verse) => `${verse.number}. ${verse.text}`).join("\n\n")
     : comparison[0]?.text ?? "Loading passage...";
   const related = useMemo(() => getRelatedPassages(reference), [reference]);
-  const prompts = useMemo(() => getStudyPrompts(reference), [reference]);
+  const prompts = useMemo(() => getPassageAssistantSuggestedQuestions(reference), [reference]);
   const dictionarySuggestions = useMemo(
     () => getSuggestedDictionaryEntries(reference),
     [reference],
@@ -236,7 +251,7 @@ export default function PassagePage() {
     [reference],
   );
   const referenceContext = useMemo(() => getReferenceContext(reference), [reference]);
-  const originalLanguageStudy = useMemo(
+  const studyResource = useMemo(
     () =>
       getVerseStudyResource(
         isChapterReference && parsedReference?.chapter
@@ -249,6 +264,61 @@ export default function PassagePage() {
     [chapterVerses, isChapterReference, parsedReference, primaryText, reference],
   );
   const noteCount = notes.filter((note) => note.noteType !== "highlight").length;
+  const assistantSuggestions = useMemo(() => prompts.slice(0, 4), [prompts]);
+
+  async function askAssistant(question: string) {
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion) return;
+
+    setAssistantQuestion(trimmedQuestion);
+    setAssistantLoading(true);
+    setAssistantError(null);
+
+    const history: PassageAssistantMessage[] = assistantConversation.flatMap((entry) => [
+      { role: "user", content: entry.question },
+      { role: "assistant", content: entry.reply.answer },
+    ]);
+
+    const response = await fetch("/api/ai/passage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        primaryText,
+        question: trimmedQuestion,
+        history,
+      }),
+    });
+
+    setAssistantLoading(false);
+
+    if (!response.ok) {
+      setAssistantError("The study assistant could not answer right now.");
+      return;
+    }
+
+    const data = (await response.json()) as {
+      reply?: PassageAssistantReply;
+      provider?: "openai" | "local-fallback";
+      error?: string;
+    };
+
+    if (!data.reply) {
+      setAssistantError("The study assistant did not return a usable answer.");
+      return;
+    }
+
+    setAssistantMode(data.provider ?? null);
+    setAssistantConversation((current) => [
+      ...current,
+      { question: trimmedQuestion, reply: data.reply as PassageAssistantReply },
+    ]);
+  }
+
+  function handleAssistantSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void askAssistant(assistantQuestion);
+  }
 
   async function saveBookmark() {
     const response = await fetch("/api/user/bookmarks", {
@@ -326,6 +396,20 @@ export default function PassagePage() {
     }
 
     setShareStatus("Unable to save note.");
+  }
+
+  function saveToCollection() {
+    if (!selectedCollectionId) {
+      setShareStatus("Choose a collection first.");
+      return;
+    }
+
+    const nextCollections = addReferenceToCollection(selectedCollectionId, {
+      reference,
+      href: `/passage/${encodeURIComponent(reference)}`,
+    });
+    setCollections(nextCollections);
+    setShareStatus("Saved to your study collection.");
   }
 
   return (
@@ -410,6 +494,25 @@ export default function PassagePage() {
                 Open Bible reader
               </Link>
             </div>
+            <div className="content-actions">
+              <select
+                value={selectedCollectionId}
+                onChange={(event) => setSelectedCollectionId(event.target.value)}
+                className="minimal-select"
+              >
+                {collections.map((collection) => (
+                  <option key={collection.id} value={collection.id}>
+                    {collection.name}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="button-secondary" onClick={saveToCollection}>
+                Save to collection
+              </button>
+              <Link href="/collections" className="button-secondary">
+                Open collections
+              </Link>
+            </div>
           </section>
 
           {isChapterReference ? (
@@ -448,11 +551,47 @@ export default function PassagePage() {
 
           <section className="content-card">
             <div className="content-section-heading">
+              <p className="eyebrow">Commentary layer</p>
+              <h2>Short study notes beside the passage</h2>
+            </div>
+            <div className="content-stack">
+              {studyResource.commentary.map((entry) => (
+                <article key={`${reference}-${entry.title}`} className="passage-study-translation">
+                  <strong>{entry.title}</strong>
+                  <p>{entry.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="content-card">
+            <div className="content-section-heading">
+              <p className="eyebrow">Cross references</p>
+              <h2>Trace how this passage connects across Scripture</h2>
+            </div>
+            <div className="content-stack">
+              {studyResource.crossReferences.map((entry) => (
+                <article key={`${reference}-${entry.reference}`} className="passage-study-translation">
+                  <strong>{entry.label}</strong>
+                  <p>{entry.reason}</p>
+                  <Link
+                    href={`/passage/${encodeURIComponent(entry.reference)}`}
+                    className="button-secondary"
+                  >
+                    Open {entry.reference}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="content-card">
+            <div className="content-section-heading">
               <p className="eyebrow">Original-language tools</p>
               <h2>Greek and Hebrew study without leaving the passage</h2>
             </div>
             <div className="content-stack">
-              {originalLanguageStudy.originalLanguage.map((entry) => (
+              {studyResource.originalLanguage.map((entry) => (
                 <article key={`${reference}-${entry.strongs}`} className="passage-study-translation">
                   <strong>
                     {entry.term} · {entry.language}
@@ -476,6 +615,111 @@ export default function PassagePage() {
                 </article>
               ))}
             </div>
+          </section>
+
+          <section className="content-card">
+            <div className="content-section-heading">
+              <p className="eyebrow">AI study assistant</p>
+              <h2>Ask questions about the text in context</h2>
+            </div>
+            <div className="content-card-note">
+              <strong>Ask about meaning, context, application, people, places, or key words.</strong>
+              <p>
+                This assistant answers from the passage text, commentary layer, cross references,
+                timeline context, dictionary entries, and original-language study notes already loaded here.
+              </p>
+            </div>
+            <form onSubmit={handleAssistantSubmit} className="content-stack">
+              <textarea
+                value={assistantQuestion}
+                onChange={(event) => setAssistantQuestion(event.target.value)}
+                className="minimal-textarea"
+                rows={4}
+                placeholder="Ask a question like: What is the main point of this passage? or How should I pray this text?"
+              />
+              <div className="content-actions">
+                <button type="submit" className="button-primary" disabled={assistantLoading}>
+                  {assistantLoading ? "Thinking..." : "Ask assistant"}
+                </button>
+              </div>
+            </form>
+            <div className="dictionary-link-list">
+              {assistantSuggestions.slice(0, 4).map((question) => (
+                <button
+                  key={question}
+                  type="button"
+                  className="button-secondary"
+                  onClick={() => void askAssistant(question)}
+                  disabled={assistantLoading}
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+            {assistantMode ? (
+              <article className="content-card-note">
+                <strong>
+                  {assistantMode === "openai"
+                    ? "Live AI response"
+                    : "Grounded local fallback"}
+                </strong>
+                <p>
+                  {assistantMode === "openai"
+                    ? "This reply came from the server-backed AI assistant using the passage packet as grounding."
+                    : "The AI backend is unavailable right now, so the page is answering from the local study packet instead."}
+                </p>
+              </article>
+            ) : null}
+            {assistantConversation.length > 0 ? (
+              <div className="content-stack">
+                {assistantConversation.map((entry, index) => (
+                  <div key={`${entry.question}-${index}`} className="content-stack">
+                    <article className="content-card-note">
+                      <strong>You asked</strong>
+                      <p>{entry.question}</p>
+                    </article>
+                    <article className="content-card-note">
+                      <strong>{entry.reply.title}</strong>
+                      <p>{entry.reply.answer}</p>
+                    </article>
+                    {entry.reply.supports.map((item) => (
+                      <article key={`${entry.question}-${item}`} className="content-card-note">
+                        <p>{item}</p>
+                      </article>
+                    ))}
+                    <article className="content-card-note">
+                      <strong>Grounding used</strong>
+                      <p>{entry.reply.citations.join(", ")}</p>
+                      {entry.reply.limitation ? <p>{entry.reply.limitation}</p> : null}
+                    </article>
+                    <article className="content-card-note">
+                      <strong>Keep exploring</strong>
+                      <div className="dictionary-link-list">
+                        {entry.reply.followUpQuestions.map((question) => (
+                          <button
+                            key={`${entry.question}-${question}`}
+                            type="button"
+                            className="button-secondary"
+                            onClick={() => void askAssistant(question)}
+                            disabled={assistantLoading}
+                          >
+                            {question}
+                          </button>
+                        ))}
+                      </div>
+                    </article>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <article className="content-card-note">
+                <p>
+                  Start with a question and this study assistant will pull together the strongest
+                  context already available on the page.
+                </p>
+              </article>
+            )}
+            {assistantError ? <p className="share-status">{assistantError}</p> : null}
           </section>
 
           <section className="content-grid-two">
@@ -531,6 +775,27 @@ export default function PassagePage() {
         <aside className="passage-study-rail">
           <section className="content-card">
             <span className="content-badge">
+              <MessageSquareQuote size={14} />
+              Assistant
+            </span>
+            <h2>Good questions to ask here</h2>
+            <div className="content-stack">
+              {assistantSuggestions.slice(0, 3).map((question) => (
+                <button
+                  key={question}
+                  type="button"
+                  className="button-secondary"
+                  onClick={() => void askAssistant(question)}
+                  disabled={assistantLoading}
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="content-card">
+            <span className="content-badge">
               <BookMarked size={14} />
               Study actions
             </span>
@@ -552,6 +817,29 @@ export default function PassagePage() {
                 Sign in to keep bookmarks, streaks, and recent study history for this reference.
               </p>
             )}
+          </section>
+
+          <section className="content-card">
+            <span className="content-badge">
+              <Archive size={14} />
+              Collections
+            </span>
+            <h2>Keep related passages together</h2>
+            <div className="content-stack">
+              {collections.slice(0, 3).map((collection) => (
+                <article key={collection.id} className="content-card-note">
+                  <strong>{collection.name}</strong>
+                  <p>{collection.description}</p>
+                  <p>
+                    {collection.items.length} saved reference
+                    {collection.items.length === 1 ? "" : "s"}
+                  </p>
+                </article>
+              ))}
+              <Link href="/collections" className="button-secondary">
+                Open collections
+              </Link>
+            </div>
           </section>
 
           <section className="content-card">

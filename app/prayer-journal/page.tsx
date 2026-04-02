@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface PrayerEntry {
@@ -11,6 +12,14 @@ interface PrayerEntry {
   answered: boolean;
   answeredDate?: string;
 }
+
+type PrayerDraft = {
+  title: string;
+  content: string;
+  category: string;
+};
+
+const PRAYER_JOURNAL_DRAFT_KEY = "csg-prayer-journal-draft";
 
 const categories = [
   "Praise & Worship",
@@ -27,12 +36,27 @@ const categories = [
 
 function PrayerEntryForm({
   onAddEntry,
+  initialDraft,
+  onDraftChange,
 }: {
   onAddEntry: (entry: Omit<PrayerEntry, "id">) => void;
+  initialDraft: PrayerDraft | null;
+  onDraftChange: (draft: PrayerDraft) => void;
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState(categories[0]);
+
+  useEffect(() => {
+    if (!initialDraft) return;
+    setTitle(initialDraft.title ?? "");
+    setContent(initialDraft.content ?? "");
+    setCategory(initialDraft.category ?? categories[0]);
+  }, [initialDraft]);
+
+  useEffect(() => {
+    onDraftChange({ title, content, category });
+  }, [category, content, onDraftChange, title]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -49,6 +73,12 @@ function PrayerEntryForm({
     });
     setTitle("");
     setContent("");
+    setCategory(categories[0]);
+    onDraftChange({
+      title: "",
+      content: "",
+      category: categories[0],
+    });
   };
 
   return (
@@ -148,10 +178,43 @@ export default function PrayerJournal() {
   });
   const [filter, setFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [draft, setDraft] = useState<PrayerDraft | null>(null);
+  const [draftStatus, setDraftStatus] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem("prayerJournal", JSON.stringify(entries));
   }, [entries]);
+
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(PRAYER_JOURNAL_DRAFT_KEY);
+      if (!savedDraft) return;
+      const parsed = JSON.parse(savedDraft) as Partial<PrayerDraft>;
+      setDraft({
+        title: parsed.title ?? "",
+        content: parsed.content ?? "",
+        category: parsed.category ?? categories[0],
+      });
+
+      if (parsed.title || parsed.content) {
+        setDraftStatus("Unfinished prayer draft restored.");
+      }
+    } catch {
+      // Ignore malformed draft data and keep defaults.
+    }
+  }, []);
+
+  function handleDraftChange(nextDraft: PrayerDraft) {
+    setDraft(nextDraft);
+
+    const hasDraft = Boolean(nextDraft.title.trim() || nextDraft.content.trim());
+    if (!hasDraft) {
+      localStorage.removeItem(PRAYER_JOURNAL_DRAFT_KEY);
+      return;
+    }
+
+    localStorage.setItem(PRAYER_JOURNAL_DRAFT_KEY, JSON.stringify(nextDraft));
+  }
 
   const addEntry = (entryData: Omit<PrayerEntry, "id">) => {
     const newEntry: PrayerEntry = {
@@ -159,6 +222,8 @@ export default function PrayerJournal() {
       id: Date.now().toString(),
     };
     setEntries([newEntry, ...entries]);
+    localStorage.removeItem(PRAYER_JOURNAL_DRAFT_KEY);
+    setDraftStatus("Prayer entry saved.");
   };
 
   const markAnswered = (id: string) => {
@@ -204,6 +269,11 @@ export default function PrayerJournal() {
           Record your prayers, track answers, and return to what God has done
           with a calmer layout around the journal itself.
         </p>
+        <div className="content-actions">
+          <Link href="/exports" className="button-secondary">
+            Export prayers and study data
+          </Link>
+        </div>
       </section>
 
       <section className="prayer-journal-stats">
@@ -223,7 +293,13 @@ export default function PrayerJournal() {
 
       <section className="prayer-journal-layout">
         <div>
-          <PrayerEntryForm onAddEntry={addEntry} />
+          <PrayerEntryForm
+            onAddEntry={addEntry}
+            initialDraft={draft}
+            onDraftChange={handleDraftChange}
+          />
+          <p className="content-card-meta">Drafts auto-save in this browser while you write.</p>
+          {draftStatus ? <p className="share-status">{draftStatus}</p> : null}
         </div>
 
         <div className="prayer-journal-stack">

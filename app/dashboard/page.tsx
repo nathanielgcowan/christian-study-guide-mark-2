@@ -17,6 +17,16 @@ import {
   UsersRound,
   WandSparkles,
 } from "lucide-react";
+import {
+  getMemoryReviewQueue,
+  getMemoryVerses,
+  getRecentPassages,
+  getStudyCollections,
+  getVerseOfTheDay,
+  MemoryVerseRecord,
+  RecentPassageItem,
+  StudyCollection,
+} from "@/lib/client-features";
 import { createClient } from "@/lib/supabase/client";
 
 interface Preferences {
@@ -136,6 +146,29 @@ function getDisplayName(session: {
   }
 
   return "Friend";
+}
+
+function isWithinLastDays(dateString: string | null | undefined, days: number) {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return false;
+  const now = Date.now();
+  const windowStart = now - days * 24 * 60 * 60 * 1000;
+  return date.getTime() >= windowStart;
+}
+
+function getUniqueDayCount(dateStrings: Array<string | null | undefined>) {
+  const uniqueDays = new Set(
+    dateStrings
+      .filter((value): value is string => Boolean(value))
+      .map((value) => {
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+      })
+      .filter((value): value is string => Boolean(value)),
+  );
+
+  return uniqueDays.size;
 }
 
 const defaultPreferences: Preferences = {
@@ -258,6 +291,9 @@ export default function DashboardPage() {
   });
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [readingPlans, setReadingPlans] = useState<UserPlanProgress[]>([]);
+  const [recentPassages, setRecentPassages] = useState<RecentPassageItem[]>([]);
+  const [studyCollections, setStudyCollections] = useState<StudyCollection[]>([]);
+  const [memoryVerses, setMemoryVerses] = useState<MemoryVerseRecord[]>([]);
   const [quickNoteReference, setQuickNoteReference] = useState("John 3:16");
   const [quickNoteContent, setQuickNoteContent] = useState("");
   const [savingQuickNote, setSavingQuickNote] = useState(false);
@@ -364,6 +400,10 @@ export default function DashboardPage() {
         setReadingPlans(data.plans);
       }
 
+      setRecentPassages(getRecentPassages());
+      setStudyCollections(getStudyCollections());
+      setMemoryVerses(getMemoryVerses());
+
       setLoading(false);
     }
 
@@ -410,14 +450,34 @@ export default function DashboardPage() {
         value: studiedMinutes,
         icon: NotebookPen,
       },
+      {
+        label: "Memory due",
+        value: getMemoryReviewQueue(memoryVerses).filter((verse) => verse.due).length,
+        icon: Sparkles,
+      },
     ];
   }, [
     bookmarks.length,
+    memoryVerses,
     prayerRequests,
     recentStudies,
     preferences.dailyTargetMinutes,
     studySummaryData?.current_streak,
   ]);
+
+  const verseOfTheDay = useMemo(() => getVerseOfTheDay(), []);
+  const memoryQueue = useMemo(() => getMemoryReviewQueue(memoryVerses), [memoryVerses]);
+  const dueMemoryVerses = useMemo(
+    () => memoryQueue.filter((verse) => verse.due).slice(0, 3),
+    [memoryQueue],
+  );
+  const topCollections = useMemo(
+    () =>
+      [...studyCollections]
+        .sort((left, right) => right.items.length - left.items.length)
+        .slice(0, 3),
+    [studyCollections],
+  );
 
   const todayFocus = useMemo(() => {
     const openPrayerCount = prayerRequests.filter(
@@ -617,6 +677,82 @@ export default function DashboardPage() {
     () => prayerRequests.filter((request) => request.status !== "answered").slice(0, 3),
     [prayerRequests],
   );
+
+  const weeklyInsights = useMemo(() => {
+    const weeklyStudies = recentStudies.filter((study) => isWithinLastDays(study.read_at, 7));
+    const weeklyStudyMinutes = weeklyStudies.reduce(
+      (total, study) => total + (study.time_spent_minutes || 0),
+      0,
+    );
+    const weeklyStudyDays = getUniqueDayCount(weeklyStudies.map((study) => study.read_at));
+
+    const weeklyPrayers = prayerRequests.filter((request) =>
+      isWithinLastDays(request.updatedAt, 7),
+    );
+    const answeredThisWeek = weeklyPrayers.filter(
+      (request) => request.status === "answered",
+    ).length;
+
+    const memoryQueueItems = getMemoryReviewQueue(memoryVerses);
+    const reviewedThisWeek = memoryVerses.filter((verse) =>
+      isWithinLastDays(verse.lastReviewed, 7),
+    );
+    const memoryReviewedThisWeek = reviewedThisWeek.length;
+    const memoryMasteredThisWeek = reviewedThisWeek.filter((verse) => verse.mastered).length;
+    const dueNow = memoryQueueItems.filter((verse) => verse.due).length;
+
+    const weeklyNotes = notes.filter((note) => isWithinLastDays(note.updatedAt, 7));
+    const weeklyPassages = recentPassages.filter((item) => isWithinLastDays(item.savedAt, 7));
+    const collectionsTouched = studyCollections.filter((collection) =>
+      isWithinLastDays(collection.updatedAt, 7),
+    ).length;
+
+    const weeklyTargetMinutes = preferences.dailyTargetMinutes * 7;
+    const targetPercent =
+      weeklyTargetMinutes > 0
+        ? Math.min(100, Math.round((weeklyStudyMinutes / weeklyTargetMinutes) * 100))
+        : 0;
+
+    let summary = "A fresh week is ready for a simple start.";
+    if (weeklyStudyMinutes >= weeklyTargetMinutes && weeklyStudyDays >= 4) {
+      summary = "You met your reading target and kept a healthy rhythm this week.";
+    } else if (weeklyStudyMinutes > 0 || weeklyNotes.length > 0 || weeklyPrayers.length > 0) {
+      summary = "You made meaningful progress this week. A small follow-up today will keep the momentum steady.";
+    }
+
+    return {
+      summary,
+      reading: {
+        sessions: weeklyStudies.length,
+        minutes: weeklyStudyMinutes,
+        activeDays: weeklyStudyDays,
+        targetPercent,
+      },
+      prayer: {
+        updated: weeklyPrayers.length,
+        answered: answeredThisWeek,
+        open: prayerRequests.filter((request) => request.status !== "answered").length,
+      },
+      memory: {
+        reviewed: memoryReviewedThisWeek,
+        mastered: memoryMasteredThisWeek,
+        dueNow,
+      },
+      study: {
+        notes: weeklyNotes.length,
+        passages: weeklyPassages.length,
+        collectionsTouched,
+      },
+    };
+  }, [
+    memoryVerses,
+    notes,
+    prayerRequests,
+    preferences.dailyTargetMinutes,
+    recentPassages,
+    recentStudies,
+    studyCollections,
+  ]);
 
   async function handleQuickNoteSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -987,6 +1123,181 @@ export default function DashboardPage() {
         </section>
       </section>
 
+      <section className="content-section-card content-stack">
+        <div className="content-section-heading">
+          <p className="eyebrow">Progress insights</p>
+          <h2>Your weekly recap</h2>
+        </div>
+        <div className="content-card-note">
+          <strong>{weeklyInsights.summary}</strong>
+          <p>
+            This recap looks at the last 7 days of reading, prayer, memory work,
+            and study activity so your dashboard can show real movement, not just totals.
+          </p>
+        </div>
+        <div className="content-grid-two">
+          <article className="content-card">
+            <span className="content-badge">
+              <BookOpenText size={14} />
+              Reading
+            </span>
+            <h3 className="content-card-title">Reading rhythm this week</h3>
+            <div className="content-stack">
+              <div className="content-card-note">
+                <strong>
+                  {weeklyInsights.reading.sessions} session
+                  {weeklyInsights.reading.sessions === 1 ? "" : "s"} logged
+                </strong>
+                <p>
+                  {weeklyInsights.reading.minutes} minutes across{" "}
+                  {weeklyInsights.reading.activeDays} active day
+                  {weeklyInsights.reading.activeDays === 1 ? "" : "s"}.
+                </p>
+              </div>
+              <div className="content-card-note">
+                <strong>{weeklyInsights.reading.targetPercent}% of your weekly target</strong>
+                <p>
+                  Your current pace is based on a {preferences.dailyTargetMinutes}-minute daily goal.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article className="content-card">
+            <span className="content-badge">
+              <HeartHandshake size={14} />
+              Prayer
+            </span>
+            <h3 className="content-card-title">Prayer movement this week</h3>
+            <div className="content-stack">
+              <div className="content-card-note">
+                <strong>
+                  {weeklyInsights.prayer.updated} request
+                  {weeklyInsights.prayer.updated === 1 ? "" : "s"} touched
+                </strong>
+                <p>
+                  {weeklyInsights.prayer.answered} answered and{" "}
+                  {weeklyInsights.prayer.open} still open right now.
+                </p>
+              </div>
+              <div className="content-card-note">
+                <strong>Keep follow-up visible</strong>
+                <p>
+                  Marking answered requests and revisiting open ones helps your prayer life stay concrete.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article className="content-card">
+            <span className="content-badge">
+              <Sparkles size={14} />
+              Memory
+            </span>
+            <h3 className="content-card-title">Memory review this week</h3>
+            <div className="content-stack">
+              <div className="content-card-note">
+                <strong>
+                  {weeklyInsights.memory.reviewed} verse
+                  {weeklyInsights.memory.reviewed === 1 ? "" : "s"} reviewed
+                </strong>
+                <p>
+                  {weeklyInsights.memory.mastered} mastered and{" "}
+                  {weeklyInsights.memory.dueNow} due for review now.
+                </p>
+              </div>
+              <div className="content-card-note">
+                <strong>Repetition is building quietly</strong>
+                <p>
+                  Even a few reviews each week keeps saved verses from drifting out of reach.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article className="content-card">
+            <span className="content-badge">
+              <NotebookPen size={14} />
+              Study
+            </span>
+            <h3 className="content-card-title">Study activity this week</h3>
+            <div className="content-stack">
+              <div className="content-card-note">
+                <strong>
+                  {weeklyInsights.study.notes} note
+                  {weeklyInsights.study.notes === 1 ? "" : "s"} updated
+                </strong>
+                <p>
+                  {weeklyInsights.study.passages} recent passage visit
+                  {weeklyInsights.study.passages === 1 ? "" : "s"} and{" "}
+                  {weeklyInsights.study.collectionsTouched} collection
+                  {weeklyInsights.study.collectionsTouched === 1 ? "" : "s"} touched.
+                </p>
+              </div>
+              <div className="content-card-note">
+                <strong>Study is becoming a workspace</strong>
+                <p>
+                  Notes, revisits, and organized collections make it easier to return with purpose.
+                </p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="content-grid-two">
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Verse of the day</p>
+            <h2>Keep one passage in front of you all day</h2>
+          </div>
+          <div className="content-card-note">
+            <strong>{verseOfTheDay.reference}</strong>
+            <p>{verseOfTheDay.text}</p>
+            <p>Theme: {verseOfTheDay.theme}</p>
+          </div>
+          <div className="content-actions">
+            <Link
+              href={`/passage/${encodeURIComponent(verseOfTheDay.reference)}`}
+              className="button-primary"
+            >
+              Study this verse
+            </Link>
+            <Link href="/scripture-memory" className="button-secondary">
+              Add memory focus
+            </Link>
+          </div>
+        </section>
+
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Recently viewed</p>
+            <h2>Return to the passages you touched most recently</h2>
+          </div>
+          {recentPassages.length > 0 ? (
+            <div className="content-stack">
+              {recentPassages.slice(0, 4).map((item) => (
+                <div key={`${item.reference}-${item.savedAt}`} className="content-card-note">
+                  <strong>{item.reference}</strong>
+                  <p>
+                    {item.type === "chapter" ? "Chapter reading" : "Passage study"} · Viewed{" "}
+                    {formatDateLabel(item.savedAt)}
+                  </p>
+                  <Link href={item.href} className="button-secondary">
+                    Open again
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="content-card-note">
+              Open the Bible reader or a passage study and your recent references will
+              start collecting here.
+            </div>
+          )}
+        </section>
+      </section>
+
       {preferences.visibleWidgets.studySummary ? (
         <section className="content-grid-two">
           {studySummary.map(({ label, value, icon: Icon }) => (
@@ -1172,6 +1483,74 @@ export default function DashboardPage() {
             </Link>
           </section>
         ) : null}
+      </section>
+
+      <section className="content-grid-two">
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Collections</p>
+            <h2>Organize the passages you want to keep together</h2>
+          </div>
+          {topCollections.length > 0 ? (
+            <div className="content-stack">
+              {topCollections.map((collection) => (
+                <div key={collection.id} className="content-card-note">
+                  <strong>{collection.name}</strong>
+                  <p>{collection.description}</p>
+                  <p>
+                    {collection.items.length} saved reference
+                    {collection.items.length === 1 ? "" : "s"} · Updated{" "}
+                    {formatDateLabel(collection.updatedAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="content-card-note">
+              Save passages into collections from the passage workspace and they
+              will show up here.
+            </div>
+          )}
+          <div className="content-actions">
+            <Link href="/collections" className="button-primary">
+              Open collections
+            </Link>
+          </div>
+        </section>
+
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Memory review</p>
+            <h2>What needs repetition next</h2>
+          </div>
+          {dueMemoryVerses.length > 0 ? (
+            <div className="content-stack">
+              {dueMemoryVerses.map((verse) => (
+                <div key={verse.id} className="content-card-note">
+                  <strong>{verse.reference}</strong>
+                  <p>{verse.text}</p>
+                  <p>
+                    {verse.category} · {verse.reviewCount} review
+                    {verse.reviewCount === 1 ? "" : "s"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="content-card-note">
+              No verses are due for review right now. As you work through memory
+              verses, this queue will keep the next ones visible.
+            </div>
+          )}
+          <div className="content-actions">
+            <Link href="/scripture-memory" className="button-primary">
+              Open memory queue
+            </Link>
+            <Link href="/passage/John%203%3A16" className="button-secondary">
+              Pick a verse to memorize
+            </Link>
+          </div>
+        </section>
       </section>
 
       <section className="content-grid-two">

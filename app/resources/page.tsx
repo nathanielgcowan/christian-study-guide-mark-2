@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const bookRecommendations = [
   {
     title: "The Pursuit of Holiness",
@@ -105,6 +107,25 @@ export default function Resources() {
           Books, podcasts, and core terms for readers who want solid next steps
           without digging through crowded recommendation pages.
         </p>
+      </section>
+
+      <section className="content-stack">
+        <div className="content-section-heading">
+          <p className="eyebrow">Guided themes</p>
+          <h2>Topic hubs for common seasons and questions</h2>
+          <p>
+            Start with curated biblical pathways for anxiety, forgiveness,
+            prayer, holiness, and identity in Christ.
+          </p>
+        </div>
+        <div className="content-actions">
+          <Link href="/topics" className="button-primary">
+            Open topic studies
+          </Link>
+          <Link href="/search" className="button-secondary">
+            Search by topic
+          </Link>
+        </div>
       </section>
 
       <section className="content-stack">

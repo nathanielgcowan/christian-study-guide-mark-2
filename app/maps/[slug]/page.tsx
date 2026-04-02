@@ -4,8 +4,10 @@ import type { Metadata } from "next";
 import {
   getBibleLocationBySlug,
   getBibleLocations,
+  getJourneysForLocation,
   getRelatedCharactersForLocation,
 } from "@/lib/bible-atlas";
+import AtlasMapPanel from "../AtlasMapPanel";
 
 export function generateStaticParams() {
   return getBibleLocations().map((location) => ({
@@ -40,6 +42,7 @@ export default async function MapDetailPage({
   }
 
   const relatedCharacters = getRelatedCharactersForLocation(location);
+  const journeys = getJourneysForLocation(location);
 
   return (
     <main id="main-content" className="page-shell content-shell content-stack">
@@ -84,6 +87,8 @@ export default async function MapDetailPage({
         </aside>
       </section>
 
+      <AtlasMapPanel locations={getBibleLocations()} highlightedSlug={location.slug} />
+
       <section className="content-grid-two">
         <section className="content-card">
           <div className="content-section-heading">
@@ -100,6 +105,25 @@ export default async function MapDetailPage({
                 {reference}
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Map profile</p>
+            <h2>Visual and story anchors</h2>
+          </div>
+          <div className="content-stack">
+            <div className="content-card-note">
+              <strong>Map label</strong>
+              <p>{location.mapLabel}</p>
+            </div>
+            <div className="content-card-note">
+              <strong>Region and era</strong>
+              <p>
+                {location.region} · {location.era}
+              </p>
+            </div>
           </div>
         </section>
 
@@ -122,6 +146,49 @@ export default async function MapDetailPage({
           </div>
         </section>
       </section>
+
+      {journeys.length > 0 ? (
+        <section className="content-card">
+          <div className="content-section-heading">
+            <p className="eyebrow">Atlas journeys</p>
+            <h2>See how this location fits a larger movement</h2>
+          </div>
+          <div className="content-stack">
+            {journeys.map((journey) => (
+              <article key={journey.slug} className="content-card-note">
+                <strong>{journey.title}</strong>
+                <p>{journey.summary}</p>
+                <p>{journey.focus}</p>
+                <div className="content-chip-row">
+                  {journey.stops.map((stop) => {
+                    const stopLocation = getBibleLocationBySlug(stop);
+                    return stopLocation ? (
+                      <Link
+                        key={`${journey.slug}-${stop}`}
+                        href={`/maps/${stopLocation.slug}`}
+                        className="content-chip"
+                      >
+                        {stopLocation.name}
+                      </Link>
+                    ) : null;
+                  })}
+                </div>
+                <div className="dictionary-link-list">
+                  {journey.keyReferences.slice(0, 3).map((reference) => (
+                    <Link
+                      key={`${journey.slug}-${reference}`}
+                      href={`/passage/${encodeURIComponent(reference)}`}
+                      className="button-secondary"
+                    >
+                      {reference}
+                    </Link>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

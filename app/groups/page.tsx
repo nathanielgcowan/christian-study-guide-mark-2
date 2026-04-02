@@ -13,6 +13,23 @@ interface GroupItem {
   description: string;
   members: number;
   nextStep: string;
+  assignedReading?: string;
+  leaderAssignments?: Array<{
+    id: string;
+    status: "open" | "done";
+  }>;
+  attendanceRecords?: Array<{
+    id: string;
+    status: "present" | "absent" | "follow-up";
+  }>;
+  discussionThreads?: Array<{
+    id: string;
+    replies?: Array<{ id: string }>;
+  }>;
+  prayerItems?: Array<{
+    id: string;
+    status: "active" | "answered";
+  }>;
 }
 
 export default function GroupsPage() {
@@ -163,13 +180,39 @@ export default function GroupsPage() {
               <strong>{group.focus}</strong>
               <p>{group.cadence}</p>
             </div>
+            <div className="content-grid-two">
+              <div className="content-card-note">
+                <strong>Open assignments</strong>
+                <p>
+                  {(group.leaderAssignments ?? []).filter((item) => item.status === "open").length}
+                </p>
+              </div>
+              <div className="content-card-note">
+                <strong>Attendance follow-up</strong>
+                <p>
+                  {(group.attendanceRecords ?? []).filter((item) => item.status === "follow-up").length}
+                </p>
+              </div>
+              <div className="content-card-note">
+                <strong>Prayer load</strong>
+                <p>
+                  {(group.prayerItems ?? []).filter((item) => item.status === "active").length}
+                </p>
+              </div>
+              <div className="content-card-note">
+                <strong>Discussion activity</strong>
+                <p>
+                  {(group.discussionThreads ?? []).length} threads
+                </p>
+              </div>
+            </div>
             <div className="content-card-note">
               <strong>Next step</strong>
               <p>{group.nextStep}</p>
             </div>
             <Link href={`/groups/${group.slug}`} className="button-secondary">
               <MessageSquareText size={16} />
-              Open group
+              Open leader dashboard
             </Link>
           </article>
         ))}

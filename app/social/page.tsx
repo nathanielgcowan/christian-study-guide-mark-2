@@ -66,6 +66,9 @@ export default function SocialPage() {
             <Link href="/user/prayer-requests" className="button-secondary">
               Prayer requests
             </Link>
+            <Link href="/testimonies" className="button-secondary">
+              Testimony wall
+            </Link>
           </div>
         </section>
 

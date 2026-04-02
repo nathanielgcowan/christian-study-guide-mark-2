@@ -32,8 +32,12 @@ async function ensureUserStreak(
   return error;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const requestedLimit = Number.parseInt(searchParams.get("limit") ?? "10", 10);
+    const limit = Math.min(Math.max(requestedLimit, 1), 180);
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,7 +69,7 @@ export async function GET() {
       .select("*")
       .eq("user_id", user.id)
       .order("read_at", { ascending: false })
-      .limit(10);
+      .limit(limit);
 
     if (studiesError) {
       return NextResponse.json({ error: studiesError.message }, { status: 400 });

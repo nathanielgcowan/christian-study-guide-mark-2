@@ -344,6 +344,7 @@ function buildMockChapterPassage(
   chapter: number,
   translation: string,
 ): BiblePassageVerse[] {
+  const fallbackVerseCount = 50;
   const style =
     translation === "kjv"
       ? "Thou art invited to behold"
@@ -351,7 +352,7 @@ function buildMockChapterPassage(
         ? "Behold"
         : "Consider";
 
-  return Array.from({ length: 18 }, (_, index) => ({
+  return Array.from({ length: fallbackVerseCount }, (_, index) => ({
     number: index + 1,
     text: `${style} ${book} ${chapter}:${index + 1} as a study-ready mock verse. This line stands in while a live Bible source is unavailable, preserving a readable chapter flow for navigation, notes, and reflection.`,
   }));
@@ -363,6 +364,11 @@ export async function getChapterPassage(
   translation: string,
 ): Promise<BiblePassageVerse[]> {
   const normalizedBook = findBibleBook(book)?.name ?? book;
+
+  if (!API_KEY) {
+    return buildMockChapterPassage(normalizedBook, chapter, translation);
+  }
+
   const chapterReference = `${normalizedBook} ${chapter}`;
   const livePassage = await getPassage(chapterReference);
 
@@ -377,9 +383,10 @@ export async function getVerse(reference: string): Promise<BibleVerse | null> {
   try {
     if (!API_KEY) {
       console.warn("BIBLE_API_KEY not set; returning mock verse");
+      const mockVerse = buildMockTranslation(reference, "web");
       return {
         reference,
-        text: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life. (John 3:16)",
+        text: mockVerse.text,
         version: "NIV",
       };
     }
@@ -457,6 +464,11 @@ function buildMockTranslation(
       web: "We know that all things work together for good for those who love God, to those who are called according to his purpose.",
       kjv: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
       asv: "And we know that to them that love God all things work together for good, even to them that are called according to his purpose.",
+    },
+    "Philippians 4:6-7": {
+      web: "Do not be anxious about anything, but in everything, by prayer and petition with thanksgiving, present your requests to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.",
+      kjv: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus.",
+      asv: "In nothing be anxious; but in everything by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall guard your hearts and your thoughts in Christ Jesus.",
     },
   };
 

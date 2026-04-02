@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getPassage, BiblePassageVerse } from "../../lib/bible";
+import { useState } from "react";
 import Link from "next/link";
 import { devotionals, Devotional } from "@/lib/devotionals";
 
@@ -18,27 +17,6 @@ function DevotionalCard({
   isToday?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(isToday);
-  const [passage, setPassage] = useState<BiblePassageVerse[] | null>(null);
-  const [loadingPassage, setLoadingPassage] = useState(true);
-
-  useEffect(() => {
-    let ignore = false;
-
-    async function loadPassage() {
-      setLoadingPassage(true);
-      const result = await getPassage(devotional.verse.reference);
-      if (!ignore) {
-        setPassage(result);
-        setLoadingPassage(false);
-      }
-    }
-
-    void loadPassage();
-
-    return () => {
-      ignore = true;
-    };
-  }, [devotional.verse.reference]);
 
   return (
     <article
@@ -62,24 +40,9 @@ function DevotionalCard({
         <h2>{devotional.title}</h2>
 
         <div className="devotional-verse-block">
-          {loadingPassage ? (
-            <div className="devotional-loading">Loading passage...</div>
-          ) : passage && passage.length > 0 ? (
-            <blockquote className="devotional-verse">
-              {passage.map((v) => (
-                <span key={v.number} className="block">
-                  <span className="devotional-verse-number">
-                    {v.number}
-                  </span>
-                  {v.text}
-                </span>
-              ))}
-            </blockquote>
-          ) : (
-            <blockquote className="devotional-verse">
-              &ldquo;{devotional.verse.text}&rdquo;
-            </blockquote>
-          )}
+          <blockquote className="devotional-verse">
+            &ldquo;{devotional.verse.text}&rdquo;
+          </blockquote>
           <cite className="devotional-citation">
             — {devotional.verse.reference}
           </cite>

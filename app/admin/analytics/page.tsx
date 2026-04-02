@@ -105,9 +105,14 @@ export default function AdminAnalyticsPage() {
               aggressive color blocking.
             </p>
           </div>
-          <Link href="/" className="button-secondary">
-            Back to home
-          </Link>
+          <div className="content-actions">
+            <Link href="/admin/churches" className="button-secondary">
+              Church branding
+            </Link>
+            <Link href="/" className="button-secondary">
+              Back to home
+            </Link>
+          </div>
         </div>
 
         {loading && <p>Loading session...</p>}

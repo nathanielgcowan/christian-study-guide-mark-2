@@ -23,6 +23,7 @@ import {
   SUPPORTED_TRANSLATIONS,
 } from "@/lib/bible";
 import { getBookContext, getChapterContext, getReferenceContext } from "@/lib/bible-context";
+import { pushRecentPassage } from "@/lib/client-features";
 import { createClient } from "@/lib/supabase/client";
 
 interface BibleReaderPayload {
@@ -193,6 +194,16 @@ export default function BibleReaderClient({
       setResumeTimestamp(data.readingProgress.updatedAt);
     }).catch(() => {});
   }, [signedIn, resumeReady, book, chapter, translation]);
+
+  useEffect(() => {
+    if (!resumeReady) return;
+
+    void pushRecentPassage({
+      reference: `${book} ${chapter}`,
+      href: `/bible/${encodeURIComponent(book)}/${chapter}`,
+      type: "chapter",
+    });
+  }, [book, chapter, resumeReady]);
 
   const chapterOptions = useMemo(() => {
     const currentBook = findBibleBook(book);
