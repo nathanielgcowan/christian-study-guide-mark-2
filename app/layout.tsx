@@ -66,6 +66,8 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      // Google AdSense script included here to ensure it loads on every page,
+      as recommended by Google.
       <script
         async
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3335495978805194"
